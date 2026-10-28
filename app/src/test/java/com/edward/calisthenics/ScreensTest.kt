@@ -2,6 +2,17 @@ package com.edward.calisthenics
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.edward.calisthenics.ui.MoveFigure
+import com.edward.calisthenics.ui.Muted
+import com.edward.calisthenics.ui.Surface2
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -119,4 +130,41 @@ class ScreensTest {
     fun finish() = shot("finish") {
         FinishScreen("Всё тело A", PlayerResult(emptyList(), 0, 1520, 265, true, 19, 20, 154), 5, {}, {})
     }
+}
+
+/** Все анимации техники: по два кадра на движение. */
+class FiguresTest {
+    @get:Rule
+    val paparazzi = Paparazzi(deviceConfig = DeviceConfig.PIXEL_5, theme = "android:Theme.Material.NoActionBar")
+
+    @Before
+    fun loadMoves() {
+        val f = listOf(File("src/main/assets/moves.json"), File("app/src/main/assets/moves.json")).first { it.exists() }
+        Moves.loadText(f.readText())
+    }
+
+    private fun sheet(name: String, ids: List<String>) = paparazzi.snapshot(name) {
+        AppTheme {
+            Column(Modifier.fillMaxSize().background(Bg).padding(4.dp)) {
+                ids.forEach { id ->
+                    Row(Modifier.fillMaxWidth().weight(1f)) {
+                        for (ph in listOf(0f, 0.25f, 0.5f)) {
+                            Box(Modifier.weight(1f).fillMaxHeight().padding(2.dp).background(Surface2)) {
+                                MoveFigure(id, Modifier.fillMaxSize(), phase = ph)
+                                Text(id, fontSize = 8.sp, color = Muted)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private val all = Exercises.all.map { it.anim }.distinct()
+
+    @Test fun figures1() = sheet("figures1", all.take(8))
+    @Test fun figures2() = sheet("figures2", all.drop(8).take(8))
+    @Test fun figures3() = sheet("figures3", all.drop(16).take(8))
+    @Test fun figures4() = sheet("figures4", all.drop(24).take(8))
+    @Test fun figures5() = sheet("figures5", all.drop(32).take(9))
 }
