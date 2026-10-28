@@ -314,6 +314,19 @@ side_plank = F((0.0, 0.194), 14, [(0.42, 0.02), (0.26, 0.73)], [(-0.47, 0.03), (
 side_plank_low = F((0.0, 0.15), 9, [(0.42, 0.02), (0.27, 0.69)], [(-0.47, 0.03), (-0.45, 0.09)])
 move("side_plank", [side_plank, side_plank_low], 2.8, props=FLOOR_MAT, front=True, bend=[1, -1, 1, 1])
 
+
+
+# статичные удержания для утренней статики
+hp = high_plank(hand_x=0.0)
+hp2 = json.loads(json.dumps(hp))
+hp2["hip"][1] += 0.008
+move("high_plank", [hp, hp2], 3.0, props=FLOOR_MAT)
+
+bh2 = json.loads(json.dumps(bridge_up))
+bh2["hip"][1] -= 0.01
+move("bridge_hold", [bridge_up, bh2], 3.0, props=FLOOR_MAT, bend=[1, 1, 1, 1])
+
+
 # --- кардио и разминка ---
 jj_in = F((0.0, 0.502), 90, [(0.09, 0.47), (-0.09, 0.47)], [(0.07, 0.0), (-0.07, 0.0)])
 jj_out = F((0.0, 0.52), 90, [(0.30, 1.12), (-0.30, 1.12)], [(0.24, 0.04), (-0.24, 0.04)])

@@ -187,18 +187,22 @@ private fun App(vm: AppViewModel) {
             is Screen.Preview -> {
                 val ref = top.ref
                 val workout = vm.workout(state, ref)
-                val isProgram = ref.exerciseId == null
+                val isProgram = ref.isProgram
                 val date = if (isProgram) Program.dateOf(state.settings, ref.week, ref.day) else null
                 WorkoutPreviewScreen(
                     state = state,
                     workout = workout,
-                    isDone = isProgram && workout.key in state.doneKeys,
+                    isDone = ref.exerciseId == null && workout.key in state.doneKeys,
                     dateLabel = date?.let { "${it.weekdayShort()}, ${it.shortTitle()}" },
                     onBack = { pop() },
                     onStart = { push(Screen.Player(ref)) },
                     onExercise = { push(Screen.Exercise(it)) },
                     onSwap = { o, n -> vm.swap(o, n) },
-                    onToggleDone = if (isProgram) ({ done: Boolean -> vm.markDone(ref.week, ref.day, done) }) else null,
+                    onToggleDone = when {
+                        isProgram -> ({ done: Boolean -> vm.markDone(ref.week, ref.day, done) })
+                        ref.daily -> ({ done: Boolean -> vm.markDailyDone(done) })
+                        else -> null
+                    },
                 )
             }
             is Screen.Exercise -> ExerciseDetailScreen(

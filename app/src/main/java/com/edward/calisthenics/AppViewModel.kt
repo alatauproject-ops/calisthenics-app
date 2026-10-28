@@ -21,8 +21,10 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
-/** Ссылка на тренировку: из программы или отдельное упражнение. */
-data class WorkoutRef(val week: Int = 0, val day: Int = 0, val exerciseId: String? = null)
+/** Ссылка на тренировку: из программы, ежедневная статика или отдельное упражнение. */
+data class WorkoutRef(val week: Int = 0, val day: Int = 0, val exerciseId: String? = null, val daily: Boolean = false) {
+    val isProgram: Boolean get() = exerciseId == null && !daily
+}
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val store = Store(app.filesDir)
@@ -35,12 +37,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) { store.save(snapshot) }
     }
 
-    fun workout(s: AppState, ref: WorkoutRef): Workout =
-        if (ref.exerciseId != null) {
-            Program.single(com.edward.calisthenics.data.Exercises.get(ref.exerciseId))
-        } else {
-            Program.workout(ref.week, ref.day, s.settings, s.swaps)
-        }
+    fun workout(s: AppState, ref: WorkoutRef): Workout = when {
+        ref.exerciseId != null -> Program.single(com.edward.calisthenics.data.Exercises.get(ref.exerciseId))
+        ref.daily -> Program.daily(Program.weekOf(s.settings, LocalDate.now()), s.settings, s.swaps)
+        else -> Program.workout(ref.week, ref.day, s.settings, s.swaps)
+    }
 
     fun saveSession(ref: WorkoutRef, w: Workout, logs: List<ExerciseLog>, startedAt: Long, durationSec: Int, kcal: Int, completed: Boolean) {
         if (logs.isEmpty()) return
@@ -74,6 +75,20 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             )
         } else {
             s.copy(sessions = s.sessions.filterNot { it.key == key })
+        }
+    }
+
+    fun markDailyDone(done: Boolean) = mutate { s ->
+        val w = Program.daily(Program.weekOf(s.settings, LocalDate.now()), s.settings, s.swaps)
+        if (done) {
+            s.copy(
+                sessions = s.sessions + Session(
+                    System.currentTimeMillis(), LocalDate.now().toEpochDay(), System.currentTimeMillis(),
+                    Program.durationSec(w), w.key, w.title, Program.kcal(w, s.currentWeight), true, emptyList(),
+                ),
+            )
+        } else {
+            s.copy(sessions = s.sessions.filterNot { it.key == w.key })
         }
     }
 

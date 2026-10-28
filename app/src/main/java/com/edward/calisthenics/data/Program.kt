@@ -319,6 +319,34 @@ object Program {
     }
 
     /** Отдельное упражнение: три подхода. */
+    const val DAILY_PREFIX = "daily:"
+
+    fun dailyKey(day: LocalDate) = "$DAILY_PREFIX${day.toEpochDay()}"
+
+    /** Ежедневная утренняя статика, около 10 минут. Время удержаний растёт с неделей программы. */
+    fun daily(week: Int, s: Settings, swaps: Map<String, String>, day: LocalDate = LocalDate.now()): Workout = with(Builder(s, swaps, week.coerceIn(1, WEEKS) - 1)) {
+        Workout(
+            dailyKey(day), "Утренняя статика", Kind.CORE,
+            "Каждый день, лучше утром. Два круга удержаний: планки, лодочка, мостик. Дышите ровно, не задерживайте дыхание.",
+            listOf(
+                Block(
+                    "Удержания", 2,
+                    listOf(
+                        t("plank", 30, 2),
+                        t("side_plank_l", 20, 2),
+                        t("side_plank_r", 20, 2),
+                        t("hollow_hold", 20, 2),
+                        t("high_plank", 30, 2),
+                        t("superman", 25, 2),
+                        t("bridge_hold", 30, 2),
+                        t("squat_hold", 30, 2),
+                    ),
+                    restItem = 10, restRound = 45,
+                ),
+            ),
+        )
+    }
+
     fun single(ex: Exercise): Workout {
         val value = when {
             ex.fixedVolume -> 300

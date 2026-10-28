@@ -136,9 +136,11 @@ fun TodayScreen(
             }
         }
 
+        DailyCard(state, week, today, onOpen, onStart)
+
         WeekStrip(state, week, today, onOpen)
 
-        FoodTodayCard(today, onFood)
+        FoodTodayCard(rawWeek, today, onFood)
 
         WeightCard(state, onLogWeight)
 
@@ -278,12 +280,12 @@ private fun HabitsCard(state: AppState, today: LocalDate, steps: Int, onToggle: 
 }
 
 @Composable
-private fun FoodTodayCard(today: LocalDate, onFood: () -> Unit) {
-    val day = com.edward.calisthenics.data.Food.week.getValue(today.dayOfWeek.value)
+private fun FoodTodayCard(programWeek: Int, today: LocalDate, onFood: () -> Unit) {
+    val day = com.edward.calisthenics.data.Food.day(programWeek, today.dayOfWeek.value)
     val (kcal, _) = com.edward.calisthenics.data.Food.dayTotals(day)
     Card(color = Surface1, onClick = onFood) {
         Row {
-            Text("ПИТАНИЕ СЕГОДНЯ", style = Caption, modifier = Modifier.weight(1f))
+            Text("ПИТАНИЕ СЕГОДНЯ · ${com.edward.calisthenics.data.Food.menuTitle(programWeek).uppercase()}", style = Caption, modifier = Modifier.weight(1f))
             Text("≈ $kcal ккал", style = Caption)
         }
         day.ids().forEach { (meal, id) ->
@@ -294,6 +296,39 @@ private fun FoodTodayCard(today: LocalDate, onFood: () -> Unit) {
                 if (r.outside != null) Pill("кафе", Rest)
             }
         }
-        com.edward.calisthenics.data.Food.prepNotes[today.dayOfWeek.value]?.let { Text(it, color = AccentSoft, fontSize = 14.sp) }
+        com.edward.calisthenics.data.Food.prep(programWeek, today.dayOfWeek.value)?.let { Text(it, color = AccentSoft, fontSize = 14.sp) }
+    }
+}
+
+/** Карточка ежедневной утренней статики. */
+@Composable
+private fun DailyCard(state: AppState, week: Int, today: LocalDate, onOpen: (WorkoutRef) -> Unit, onStart: (WorkoutRef) -> Unit) {
+    val w = Program.daily(week, state.settings, state.swaps, today)
+    val done = w.key in state.doneKeys
+    val ref = WorkoutRef(daily = true)
+    Card(color = Surface1, onClick = { onOpen(ref) }) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(64.dp).clip(RoundedCornerShape(16.dp)).background(kindColor(w.kind).copy(alpha = 0.16f))) {
+                MoveFigure("side_plank", Modifier.fillMaxSize().padding(4.dp), animate = false, color = kindColor(w.kind))
+            }
+            Column(Modifier.weight(1f)) {
+                Text("Каждый день", style = Caption)
+                Text(w.title, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    if (done) "Сегодня сделано ✓" else "≈ ${minutesText(Program.durationSec(w))} · планки и удержания",
+                    color = if (done) Success else Muted,
+                )
+            }
+            if (done) {
+                Box(Modifier.size(48.dp).clip(CircleShape).background(Success.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Check, "Сделано", tint = Success)
+                }
+            } else {
+                IconButton(
+                    onClick = { onStart(ref) },
+                    modifier = Modifier.size(48.dp).clip(CircleShape).background(kindColor(w.kind)),
+                ) { Icon(Icons.Filled.PlayArrow, "Начать", tint = Color.White) }
+            }
+        }
     }
 }

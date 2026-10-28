@@ -93,6 +93,12 @@ class ScreensTest {
     }
 
     @Test
+    fun dailyPreview() = shot("daily_preview") {
+        val w = Program.daily(1, state.settings, state.swaps)
+        WorkoutPreviewScreen(state, w, false, null, {}, {}, {}, { _, _ -> }, {})
+    }
+
+    @Test
     fun previewBeach() = shot("preview_beach") {
         val w = Program.workout(6, 1, state.settings, state.swaps)
         WorkoutPreviewScreen(state, w, false, "вт, 10 декабря", {}, {}, {}, { _, _ -> }, {})

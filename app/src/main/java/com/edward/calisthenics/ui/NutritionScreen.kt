@@ -25,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
 import com.edward.calisthenics.data.Food
+import com.edward.calisthenics.data.Program
 import com.edward.calisthenics.data.Recipe
 import java.time.LocalDate
 import androidx.compose.foundation.layout.Column
@@ -65,7 +66,7 @@ fun NutritionScreen(
         }
         Box(Modifier.weight(1f)) {
             when (tab) {
-                0 -> MenuTab { recipe = it }
+                0 -> MenuTab(Program.weekOf(state.settings, LocalDate.now())) { recipe = it }
                 1 -> ShoppingTab(state.shopping, onToggleShop, onClearShop)
                 2 -> RecipesTab { recipe = it }
                 else -> GoalsTab(state)
@@ -76,16 +77,21 @@ fun NutritionScreen(
 }
 
 @Composable
-private fun MenuTab(onRecipe: (String) -> Unit) {
+private fun MenuTab(programWeek: Int, onRecipe: (String) -> Unit) {
     val todayDow = LocalDate.now().dayOfWeek.value
     var dow by rememberSaveable { mutableIntStateOf(todayDow) }
-    val day = Food.week.getValue(dow)
+    var week by rememberSaveable { mutableIntStateOf(if (Food.isWeekB(programWeek)) 2 else 1) }
+    val day = Food.day(week, dow)
     val (kcal, protein) = Food.dayTotals(day)
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Меню повторяется каждую неделю, начиная с понедельника 2 ноября. Три ужина в кафе, остальное готовите дома.", color = Muted, fontSize = 14.sp)
+        Text("Две недели меню чередуются: А по нечётным неделям программы, Б по чётным. Без свинины и сахара, три ужина в кафе, остальное дома.", color = Muted, fontSize = 14.sp)
+        Segmented(
+            listOf("Неделя А" + if (!Food.isWeekB(programWeek)) " · сейчас" else "", "Неделя Б" + if (Food.isWeekB(programWeek)) " · сейчас" else ""),
+            week - 1,
+        ) { week = it + 1 }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             WeekdayShort.forEachIndexed { i, label ->
                 val d = i + 1
@@ -120,6 +126,7 @@ private fun MenuTab(onRecipe: (String) -> Unit) {
                         if (r.outside != null) Pill("в кафе", Rest) else Pill("дома", Success)
                     }
                     Text(r.name, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, modifier = Modifier.padding(top = 4.dp))
+                    Text(r.vn, color = AccentSoft, fontSize = 14.sp)
                     Text(
                         "≈ ${r.kcal} ккал · ${r.protein} г белка" + (r.outside?.let { " · $it" } ?: if (r.minutes > 1) " · ${r.minutes} мин" else ""),
                         style = Caption,
@@ -128,7 +135,7 @@ private fun MenuTab(onRecipe: (String) -> Unit) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Muted)
             }
         }
-        Food.prepNotes[dow]?.let { note ->
+        Food.prep(week, dow)?.let { note ->
             Card(color = Surface1) {
                 Text("ЗАГОТОВКИ", style = Caption)
                 Text(note)
@@ -182,6 +189,15 @@ private fun ShoppingTab(checked: List<String>, onToggle: (String) -> Unit, onCle
         if (checked.isNotEmpty()) {
             OutlinedButton(onClick = onClear, modifier = Modifier.fillMaxWidth()) { Text("Снять все отметки") }
         }
+        SectionTitle("Фразы для рынка и кафе")
+        Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(20.dp)).background(Surface1).padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Food.phrases.forEach { (ru, vn) ->
+                Column {
+                    Text(vn, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = AccentSoft)
+                    Text(ru, style = Caption)
+                }
+            }
+        }
         SectionTitle("Маленький холодильник")
         Card(color = Surface1) { Food.fridgeTips.forEach { Bullet(it, Rest) } }
         Text("Цены примерные, на рынке торгуются и бывает дешевле. Названия на вьетнамском можно показать продавцу.", style = Caption)
@@ -211,6 +227,7 @@ private fun RecipesTab(onRecipe: (String) -> Unit) {
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(r.name, fontWeight = FontWeight.SemiBold)
+                        Text(r.vn, color = AccentSoft, fontSize = 13.sp)
                         Text(
                             when {
                                 r.outside != null -> "≈ ${r.kcal} ккал · ${r.outside}"
@@ -232,7 +249,12 @@ private fun RecipesTab(onRecipe: (String) -> Unit) {
 private fun RecipeDialog(r: Recipe, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(r.name) },
+        title = {
+            Column {
+                Text(r.name)
+                Text(r.vn, color = AccentSoft, fontSize = 16.sp)
+            }
+        },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 if (r.kcal > 0) {
@@ -242,7 +264,15 @@ private fun RecipeDialog(r: Recipe, onDismiss: () -> Unit) {
                     )
                 }
                 Text(if (r.outside != null) "ЧТО ЗАКАЗАТЬ" else "ПРОДУКТЫ", style = Caption, modifier = Modifier.padding(top = 4.dp))
-                r.ingredients.forEach { Bullet(it, Success) }
+                r.ingredients.forEach { ing ->
+                    Row(verticalAlignment = Alignment.Top) {
+                        Box(Modifier.padding(top = 8.dp).size(6.dp).clip(CircleShape).background(Success))
+                        Column(Modifier.padding(start = 10.dp)) {
+                            Text(if (ing.amount.isEmpty()) ing.ru else "${ing.ru} — ${ing.amount}", color = TextMain)
+                            Text(ing.vn, color = AccentSoft, fontSize = 14.sp)
+                        }
+                    }
+                }
                 Text(if (r.outside != null) "СОВЕТ" else "КАК ГОТОВИТЬ", style = Caption, modifier = Modifier.padding(top = 4.dp))
                 r.steps.forEachIndexed { i, st ->
                     Row {
