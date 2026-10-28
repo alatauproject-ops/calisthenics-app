@@ -106,6 +106,7 @@ private fun App(vm: AppViewModel) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val stack = remember { mutableStateListOf<Screen>() }
     var weightDialog by remember { mutableStateOf(false) }
+    var foodTab by rememberSaveable { mutableIntStateOf(0) }
 
     val context = LocalContext.current
     val feedback = remember { Feedback(context.applicationContext) }
@@ -160,6 +161,10 @@ private fun App(vm: AppViewModel) {
                             onLogWeight = { weightDialog = true },
                             onToggleHabit = { vm.toggleHabit(it) },
                             onStartThisWeek = { vm.updateSettings { it.copy(startEpochDay = AppViewModel.thisMonday().toEpochDay()) } },
+                            onFood = {
+                                foodTab = 0
+                                tab = Tab.FOOD.ordinal
+                            },
                         )
                         Tab.PROGRAM -> ProgramScreen(state, onOpen = openWorkout)
                         Tab.LIBRARY -> LibraryScreen(onExercise = { push(Screen.Exercise(it)) })
@@ -169,7 +174,13 @@ private fun App(vm: AppViewModel) {
                             onDeleteWeight = { vm.deleteWeight(it) },
                             onDeleteSession = { vm.deleteSession(it) },
                         )
-                        Tab.FOOD -> NutritionScreen(state)
+                        Tab.FOOD -> NutritionScreen(
+                            state,
+                            tab = foodTab,
+                            onTab = { foodTab = it },
+                            onToggleShop = { vm.toggleShop(it) },
+                            onClearShop = { vm.clearShop() },
+                        )
                     }
                 }
             }

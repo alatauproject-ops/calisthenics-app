@@ -69,6 +69,8 @@ data class AppState(
     val habits: Map<Long, List<String>> = emptyMap(),
     /** Замены упражнений: исходное упражнение программы -> выбранное. */
     val swaps: Map<String, String> = emptyMap(),
+    /** Отмеченные пункты списка покупок. */
+    val shopping: List<String> = emptyList(),
 ) {
     val currentWeight: Double get() = weights.maxByOrNull { it.epochDay }?.kg ?: profile.startWeight
     val doneKeys: Set<String> get() = sessions.filter { it.completed }.mapTo(HashSet()) { it.key }

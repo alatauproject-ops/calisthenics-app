@@ -91,6 +91,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         s.copy(habits = s.habits + (e to next))
     }
 
+    fun toggleShop(id: String) = mutate { s ->
+        s.copy(shopping = if (id in s.shopping) s.shopping - id else s.shopping + id)
+    }
+
+    fun clearShop() = mutate { s -> s.copy(shopping = emptyList()) }
+
     fun swap(originalId: String, newId: String?) = mutate { s ->
         s.copy(swaps = if (newId == null || newId == originalId) s.swaps - originalId else s.swaps + (originalId to newId))
     }

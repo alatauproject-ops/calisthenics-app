@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -53,6 +54,7 @@ fun TodayScreen(
     onLogWeight: () -> Unit,
     onToggleHabit: (String) -> Unit,
     onStartThisWeek: () -> Unit,
+    onFood: () -> Unit,
     today: LocalDate = LocalDate.now(),
 ) {
     val s = state.settings
@@ -135,6 +137,8 @@ fun TodayScreen(
         }
 
         WeekStrip(state, week, today, onOpen)
+
+        FoodTodayCard(today, onFood)
 
         WeightCard(state, onLogWeight)
 
@@ -270,5 +274,26 @@ private fun HabitsCard(state: AppState, today: LocalDate, steps: Int, onToggle: 
                 Text(label, modifier = Modifier.padding(start = 12.dp), color = if (on) Muted else TextMain)
             }
         }
+    }
+}
+
+@Composable
+private fun FoodTodayCard(today: LocalDate, onFood: () -> Unit) {
+    val day = com.edward.calisthenics.data.Food.week.getValue(today.dayOfWeek.value)
+    val (kcal, _) = com.edward.calisthenics.data.Food.dayTotals(day)
+    Card(color = Surface1, onClick = onFood) {
+        Row {
+            Text("ПИТАНИЕ СЕГОДНЯ", style = Caption, modifier = Modifier.weight(1f))
+            Text("≈ $kcal ккал", style = Caption)
+        }
+        day.ids().forEach { (meal, id) ->
+            val r = com.edward.calisthenics.data.Food.recipe(id)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(meal.title, color = Muted, fontSize = 14.sp, modifier = Modifier.padding(end = 8.dp).width(76.dp))
+                Text(r.name, modifier = Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                if (r.outside != null) Pill("кафе", Rest)
+            }
+        }
+        com.edward.calisthenics.data.Food.prepNotes[today.dayOfWeek.value]?.let { Text(it, color = AccentSoft, fontSize = 14.sp) }
     }
 }
