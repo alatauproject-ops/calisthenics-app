@@ -4,11 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,160 +17,132 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.edward.calisthenics.AppViewModel
+import com.edward.calisthenics.WorkoutRef
 import com.edward.calisthenics.data.AppState
-import com.edward.calisthenics.data.Catalog
-import com.edward.calisthenics.data.Exercise
-import com.edward.calisthenics.data.Measure
-import com.edward.calisthenics.formatValue
+import com.edward.calisthenics.data.Program
+import java.time.LocalDate
 
 @Composable
-fun ProgramScreen(state: AppState, vm: AppViewModel) {
-    var selected by remember { mutableStateOf<Exercise?>(null) }
+fun ProgramScreen(state: AppState, onOpen: (WorkoutRef) -> Unit) {
+    val s = state.settings
+    val today = LocalDate.now()
+    val current = Program.weekOf(s, today).coerceIn(1, Program.WEEKS)
+    val done = state.doneKeys
+    var expanded by rememberSaveable { mutableStateOf(current) }
+    val doneCount = done.count { it.startsWith("w") }
 
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
-            ScreenTitle(
-                "Программа",
-                "Две тренировки на всё тело, A и B, чередуются. Когда цель выполнена во всех подходах, " +
-                    "она растёт сама, а после максимума открывается следующая ступень. " +
-                    "Нажмите ▶, чтобы потренировать упражнение отдельно.",
+            Text("Программа", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
+            Text(
+                "12 недель, 4 тренировки в неделю. Выполнено $doneCount из ${Program.WEEKS * Program.DAYS}.",
+                color = Muted,
+            )
+            Spacer(Modifier.height(6.dp))
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { doneCount / (Program.WEEKS * Program.DAYS).toFloat() },
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)),
+                color = Success,
+                trackColor = Surface2,
             )
         }
-        item {
-            SectionCard {
-                Text("A: " + Catalog.workoutA.joinToString(", ") { Catalog.chain(it)!!.title }, fontSize = 14.sp)
-                Text("B: " + Catalog.workoutB.joinToString(", ") { Catalog.chain(it)!!.title }, fontSize = 14.sp)
-                Text(
-                    "Подходов на упражнение: ${state.settings.level.sets} (${state.settings.level.title.lowercase()} уровень)",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        items(Catalog.chains, key = { it.id }) { chain ->
-            val p = vm.progressFor(state, chain.id)
-            SectionCard {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("${chain.emoji} ${chain.title}", Modifier.weight(1f), fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    val cur = chain.steps[p.step.coerceIn(0, chain.steps.lastIndex)]
-                    OutlinedButton(onClick = { vm.adjustTarget(chain.id, if (cur.measure == Measure.HOLD) -5 else -1) }) {
-                        Text("−")
-                    }
-                    Text(
-                        formatValue(cur.measure, p.target),
-                        Modifier.padding(horizontal = 10.dp),
-                        fontWeight = FontWeight.Bold,
-                        color = Accent,
-                    )
-                    OutlinedButton(onClick = { vm.adjustTarget(chain.id, if (cur.measure == Measure.HOLD) 5 else 1) }) {
-                        Text("+")
-                    }
+        Program.phases.forEach { phase ->
+            item {
+                Card(brush = CardGradient, modifier = Modifier.padding(top = 8.dp)) {
+                    Text("НЕДЕЛИ ${phase.weeks.first}–${phase.weeks.last}", style = Caption)
+                    Text("Фаза «${phase.title}»", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AccentSoft)
+                    Text(phase.goal, color = Muted)
+                    Text("Шаги каждый день: ${"%,d".format(Ru, phase.steps)}", fontWeight = FontWeight.SemiBold)
                 }
-                chain.steps.forEach { ex ->
-                    val current = ex.step == p.step
-                    val passed = ex.step < p.step
+            }
+            items(phase.weeks.toList()) { week ->
+                val weekDone = (0 until Program.DAYS).count { Program.key(week, it) in done }
+                val open = expanded == week
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Surface1),
+                ) {
                     Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(
-                                if (current) Accent.copy(alpha = 0.15f) else Color.Transparent,
-                                RoundedCornerShape(12.dp),
-                            )
-                            .clickable { selected = ex }
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        Modifier.fillMaxWidth().clickable { expanded = if (open) 0 else week }.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
-                            Modifier
-                                .size(26.dp)
-                                .background(
-                                    when {
-                                        passed -> Success
-                                        current -> Accent
-                                        else -> MaterialTheme.colorScheme.surfaceVariant
-                                    },
-                                    CircleShape,
-                                ),
+                            Modifier.size(40.dp).clip(CircleShape).background(
+                                when {
+                                    weekDone == Program.DAYS -> Success
+                                    week == current -> Accent
+                                    else -> Surface2
+                                },
+                            ),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(
-                                if (passed) "✓" else "${ex.step + 1}",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (passed || current) Color(0xFF111111) else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                            if (weekDone == Program.DAYS) Icon(Icons.Filled.Check, null, tint = Color(0xFF04150D))
+                            else Text("$week", fontWeight = FontWeight.Bold, color = if (week == current) Color.White else TextMain)
                         }
-                        Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                            Text(ex.name, fontWeight = if (current) FontWeight.Bold else FontWeight.Normal)
-                            Text(
-                                "${formatValue(ex.measure, ex.startTarget)} → ${formatValue(ex.measure, ex.goalTarget)} ${unit(ex.measure)}",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                        Column(Modifier.padding(start = 12.dp).weight(1f)) {
+                            Text("Неделя $week" + if (week == current) " · сейчас" else "", fontWeight = FontWeight.SemiBold)
+                            val d0 = Program.dateOf(s, week, 0)
+                            Text("с ${d0.minusDays((d0.dayOfWeek.value - 1).toLong()).shortTitle()} · выполнено $weekDone/${Program.DAYS}", style = Caption)
                         }
-                        FilledTonalIconButton(onClick = { vm.startFree(ex.id) }, modifier = Modifier.size(36.dp)) {
-                            Icon(Icons.Filled.PlayArrow, "Счётчик")
+                        Icon(if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, null, tint = Muted)
+                    }
+                    if (open) {
+                        Column(Modifier.padding(start = 10.dp, end = 10.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            for (day in 0 until Program.DAYS) {
+                                val w = Program.workout(week, day, s, state.swaps)
+                                val date = Program.dateOf(s, week, day)
+                                val isDone = Program.key(week, day) in done
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(Surface2)
+                                        .clickable { onOpen(WorkoutRef(week, day)) }
+                                        .padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Box(Modifier.size(6.dp, 44.dp).clip(RoundedCornerShape(3.dp)).background(kindColor(w.kind)))
+                                    Column(Modifier.padding(start = 12.dp).weight(1f)) {
+                                        Text(w.title, fontWeight = FontWeight.SemiBold)
+                                        Text(
+                                            "${date.weekdayShort()}, ${date.shortTitle()} · ≈ ${minutesText(Program.durationSec(w))} · ${w.kind.title}",
+                                            style = Caption,
+                                        )
+                                    }
+                                    if (isDone) {
+                                        Box(Modifier.size(28.dp).clip(CircleShape).background(Success), contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Filled.Check, null, tint = Color(0xFF04150D), modifier = Modifier.size(18.dp))
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-    }
-
-    selected?.let { ex ->
-        val chain = Catalog.chain(ex.chainId)!!
-        val isCurrent = vm.progressFor(state, chain.id).step == ex.step
-        AlertDialog(
-            onDismissRequest = { selected = null },
-            title = { Text(ex.name) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(ex.cues)
-                    Text(
-                        "Начальная цель: ${formatValue(ex.measure, ex.startTarget)} ${unit(ex.measure)}. " +
-                            "Переход дальше: ${formatValue(ex.measure, ex.goalTarget)} ${unit(ex.measure)} во всех подходах.",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            },
-            confirmButton = {
-                Button(onClick = { vm.startFree(ex.id); selected = null }) { Text("Счётчик") }
-            },
-            dismissButton = {
-                if (!isCurrent) {
-                    TextButton(onClick = { vm.setStep(chain.id, ex.step); selected = null }) {
-                        Text("Сделать текущей")
-                    }
-                } else {
-                    TextButton(onClick = { selected = null }) { Text("OK") }
-                }
-            },
-        )
     }
 }

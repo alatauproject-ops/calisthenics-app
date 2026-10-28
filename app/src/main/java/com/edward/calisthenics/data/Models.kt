@@ -2,49 +2,44 @@ package com.edward.calisthenics.data
 
 import kotlinx.serialization.Serializable
 
-/** Как считается упражнение: повторения или удержание в секундах. */
-enum class Measure { REPS, HOLD }
+/** Как считается упражнение: повторения или время. */
+enum class Measure { REPS, TIME }
 
-enum class Level(val title: String, val sets: Int) {
-    BEGINNER("Новичок", 3),
-    INTERMEDIATE("Средний", 3),
-    ADVANCED("Продвинутый", 4),
+/** Множитель объёма программы. */
+enum class Level(val title: String, val factor: Double) {
+    EASY("Полегче", 0.8),
+    NORMAL("Обычный", 1.0),
+    HARD("Посложнее", 1.2),
 }
 
-data class Exercise(
-    val id: String,
-    val chainId: String,
-    val step: Int,
-    val name: String,
-    val measure: Measure,
-    /** Цель на подход, с которой начинаем эту ступень. */
-    val startTarget: Int,
-    /** Цель, после выполнения которой открывается следующая ступень. */
-    val goalTarget: Int,
-    val cues: String,
-)
-
-data class Chain(
-    val id: String,
-    val title: String,
-    val emoji: String,
-    val steps: List<Exercise>,
-    /** Стартовая ступень для каждого уровня: новичок, средний, продвинутый. */
-    val levelStarts: List<Int>,
-)
-
-/** Текущая ступень и цель пользователя в цепочке прогрессий. */
 @Serializable
-data class ChainProgress(
-    val step: Int,
-    val target: Int,
+data class Profile(
+    val age: Int = 35,
+    val heightCm: Int = 180,
+    val startWeight: Double = 100.0,
+    val goalWeight: Double = 85.0,
+)
+
+@Serializable
+data class Settings(
+    /** Понедельник, с которого начинается 12-недельная программа. */
+    val startEpochDay: Long = 0,
+    /** Дни тренировок, 1 = понедельник. Ровно четыре. */
+    val trainingDays: List<Int> = listOf(1, 2, 4, 6),
+    val level: Level = Level.NORMAL,
+    val hasBar: Boolean = false,
+    val hasBench: Boolean = true,
+    val sound: Boolean = true,
+    val vibration: Boolean = true,
+    val voice: Boolean = true,
+    val onboarded: Boolean = false,
 )
 
 @Serializable
 data class ExerciseLog(
     val exerciseId: String,
-    val target: Int,
-    val sets: List<Int>,
+    /** Выполнено в каждом подходе: повторения или секунды. */
+    val values: List<Int>,
 )
 
 @Serializable
@@ -53,37 +48,28 @@ data class Session(
     val epochDay: Long,
     val startedAt: Long,
     val durationSec: Int,
+    /** Ключ тренировки программы ("w3d1") или "free:<id>". */
+    val key: String,
     val title: String,
+    val kcal: Int,
+    val completed: Boolean,
     val entries: List<ExerciseLog>,
 )
 
 @Serializable
-data class Settings(
-    val level: Level = Level.BEGINNER,
-    /** Дни недели 1..7 (понедельник = 1). */
-    val trainingDays: Set<Int> = setOf(1, 3, 5),
-    val restSec: Int = 90,
-    val sound: Boolean = true,
-    val vibration: Boolean = true,
-    val onboarded: Boolean = false,
-)
+data class WeightEntry(val epochDay: Long, val kg: Double)
 
 @Serializable
 data class AppState(
+    val profile: Profile = Profile(),
     val settings: Settings = Settings(),
-    val progress: Map<String, ChainProgress> = emptyMap(),
     val sessions: List<Session> = emptyList(),
-)
-
-/** Пункт тренировки: упражнение, цель и количество подходов (0 = без ограничения). */
-data class PlanItem(
-    val exercise: Exercise,
-    val target: Int,
-    val sets: Int,
-)
-
-data class WorkoutPlan(
-    val title: String,
-    val items: List<PlanItem>,
-    val free: Boolean = false,
-)
+    val weights: List<WeightEntry> = emptyList(),
+    /** Отмеченные привычки по дням. */
+    val habits: Map<Long, List<String>> = emptyMap(),
+    /** Замены упражнений: исходное упражнение программы -> выбранное. */
+    val swaps: Map<String, String> = emptyMap(),
+) {
+    val currentWeight: Double get() = weights.maxByOrNull { it.epochDay }?.kg ?: profile.startWeight
+    val doneKeys: Set<String> get() = sessions.filter { it.completed }.mapTo(HashSet()) { it.key }
+}
