@@ -207,7 +207,7 @@ fun OnboardingScreen(initial: AppState, onDone: (Profile, Settings) -> Unit) {
             Box(Modifier.fillMaxWidth().height(170.dp)) {
                 MoveFigure("burpee", Modifier.fillMaxSize(), color = Color.White)
             }
-            Text("Минус 15 кг за 12 недель", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+            Text("12 недель до 85 кг", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
             Text(
                 "Программа на собственном весе: коврик, пляж и турник, если найдётся. 4 тренировки в неделю, шаги, питание и контроль веса.",
                 color = Color.White.copy(alpha = 0.92f),

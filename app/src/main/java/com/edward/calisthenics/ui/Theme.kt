@@ -1,9 +1,11 @@
 package com.edward.calisthenics.ui
 
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -60,6 +62,10 @@ private val colors = darkColorScheme(
     onPrimary = Color.White,
     secondary = Success,
     onSecondary = Color(0xFF04150D),
+    secondaryContainer = Surface2,
+    onSecondaryContainer = TextMain,
+    primaryContainer = Color(0xFF3A2418),
+    onPrimaryContainer = AccentSoft,
     tertiary = Rest,
     background = Bg,
     onBackground = TextMain,
@@ -89,5 +95,7 @@ val Caption = TextStyle(fontSize = 12.sp, color = Muted, letterSpacing = 0.4.sp)
 
 @Composable
 fun AppTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = colors, typography = typography, content = content)
+    MaterialTheme(colorScheme = colors, typography = typography) {
+        CompositionLocalProvider(LocalContentColor provides TextMain, content = content)
+    }
 }

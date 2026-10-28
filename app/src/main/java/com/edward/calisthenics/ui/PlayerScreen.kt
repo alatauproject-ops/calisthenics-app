@@ -403,7 +403,7 @@ fun PlayerScreen(
                             Icon(if (running) Icons.Filled.Pause else Icons.Filled.PlayArrow, null)
                             Text(
                                 when {
-                                    phase == TimerPhase.READY -> "  Старт сейчас"
+                                    phase == TimerPhase.READY -> "  Старт"
                                     running -> "  Пауза"
                                     else -> "  Продолжить"
                                 },
