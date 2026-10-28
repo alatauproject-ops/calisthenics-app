@@ -35,6 +35,9 @@ data class Workout(
     val day: Int = 0,
 )
 
+/** Ближайшая тренировка для экрана «Сегодня». */
+data class NextUp(val week: Int, val day: Int, val date: LocalDate, val isToday: Boolean, val overdue: Boolean)
+
 data class Phase(val title: String, val weeks: IntRange, val goal: String, val steps: Int)
 
 /** Шаг плеера: работа или отдых. */
@@ -77,6 +80,21 @@ object Program {
     }
 
     fun key(week: Int, day: Int) = "w${week}d$day"
+
+    /** Первая невыполненная тренировка текущей недели с датой не позже сегодня, иначе ближайшая будущая. */
+    fun nextUp(s: AppState, today: LocalDate = LocalDate.now()): NextUp? {
+        val done = s.doneKeys
+        val week = weekOf(s.settings, today).coerceIn(1, WEEKS)
+        for (w in week..WEEKS) {
+            for (d in 0 until DAYS) {
+                if (key(w, d) in done) continue
+                val date = dateOf(s.settings, w, d)
+                if (w == week && date.isBefore(today)) return NextUp(w, d, date, isToday = false, overdue = true)
+                if (!date.isBefore(today)) return NextUp(w, d, date, isToday = date == today, overdue = false)
+            }
+        }
+        return null
+    }
 
     // ---------- сборка тренировки ----------
 

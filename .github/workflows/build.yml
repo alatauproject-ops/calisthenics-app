@@ -31,7 +31,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="build-${{ github.run_number }}"
-          gh release create "$TAG" Calisthenics.apk \
+          gh release create "$TAG" Calisthenics.apk --target "${{ github.sha }}" \
             --title "Калистеника, сборка ${{ github.run_number }}" \
             --notes "APK для установки на Android. Коммит ${{ github.sha }}." \
             --latest
+      - name: Screenshots
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ./gradlew :app:recordPaparazziDebug --no-daemon
+          cd app/src/test/snapshots/images && zip -q -r "$GITHUB_WORKSPACE/screenshots.zip" .
+          gh release upload "build-${{ github.run_number }}" "$GITHUB_WORKSPACE/screenshots.zip"

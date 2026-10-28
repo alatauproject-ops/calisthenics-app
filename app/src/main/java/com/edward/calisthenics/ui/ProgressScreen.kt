@@ -51,14 +51,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.edward.calisthenics.AppViewModel
 import com.edward.calisthenics.data.AppState
 import com.edward.calisthenics.data.Program
 import java.time.LocalDate
 import java.time.YearMonth
 
 @Composable
-fun ProgressScreen(state: AppState, vm: AppViewModel, onLogWeight: () -> Unit) {
+fun ProgressScreen(
+    state: AppState,
+    onLogWeight: () -> Unit,
+    onDeleteWeight: (Long) -> Unit,
+    onDeleteSession: (Long) -> Unit,
+) {
     var confirmDelete by remember { mutableStateOf<Long?>(null) }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
@@ -88,7 +92,7 @@ fun ProgressScreen(state: AppState, vm: AppViewModel, onLogWeight: () -> Unit) {
                 ) {
                     Text(LocalDate.ofEpochDay(w.epochDay).shortTitle(), modifier = Modifier.weight(1f), color = Muted)
                     Text("${kg(w.kg)} кг", fontWeight = FontWeight.SemiBold)
-                    IconButton(onClick = { vm.deleteWeight(w.epochDay) }) { Icon(Icons.Filled.Delete, "Удалить", tint = Muted) }
+                    IconButton(onClick = { onDeleteWeight(w.epochDay) }) { Icon(Icons.Filled.Delete, "Удалить", tint = Muted) }
                 }
             }
         }
@@ -119,7 +123,7 @@ fun ProgressScreen(state: AppState, vm: AppViewModel, onLogWeight: () -> Unit) {
             onDismissRequest = { confirmDelete = null },
             title = { Text("Удалить тренировку?") },
             text = { Text("Запись пропадёт из истории и прогресса программы.") },
-            confirmButton = { TextButton(onClick = { vm.deleteSession(id); confirmDelete = null }) { Text("Удалить", color = Danger) } },
+            confirmButton = { TextButton(onClick = { onDeleteSession(id); confirmDelete = null }) { Text("Удалить", color = Danger) } },
             dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("Отмена") } },
         )
     }

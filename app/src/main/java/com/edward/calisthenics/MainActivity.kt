@@ -153,15 +153,22 @@ private fun App(vm: AppViewModel) {
                 Column(Modifier.padding(padding)) {
                     when (Tab.entries[tab]) {
                         Tab.TODAY -> TodayScreen(
-                            state, vm,
+                            state,
                             onOpen = openWorkout,
                             onStart = startWorkout,
                             onSettings = { push(Screen.Settings) },
                             onLogWeight = { weightDialog = true },
+                            onToggleHabit = { vm.toggleHabit(it) },
+                            onStartThisWeek = { vm.updateSettings { it.copy(startEpochDay = AppViewModel.thisMonday().toEpochDay()) } },
                         )
                         Tab.PROGRAM -> ProgramScreen(state, onOpen = openWorkout)
                         Tab.LIBRARY -> LibraryScreen(onExercise = { push(Screen.Exercise(it)) })
-                        Tab.PROGRESS -> ProgressScreen(state, vm, onLogWeight = { weightDialog = true })
+                        Tab.PROGRESS -> ProgressScreen(
+                            state,
+                            onLogWeight = { weightDialog = true },
+                            onDeleteWeight = { vm.deleteWeight(it) },
+                            onDeleteSession = { vm.deleteSession(it) },
+                        )
                         Tab.FOOD -> NutritionScreen(state)
                     }
                 }

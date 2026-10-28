@@ -24,9 +24,6 @@ import java.time.temporal.TemporalAdjusters
 /** Ссылка на тренировку: из программы или отдельное упражнение. */
 data class WorkoutRef(val week: Int = 0, val day: Int = 0, val exerciseId: String? = null)
 
-/** Ближайшая тренировка для экрана «Сегодня». */
-data class NextUp(val week: Int, val day: Int, val date: LocalDate, val isToday: Boolean, val overdue: Boolean)
-
 class AppViewModel(app: Application) : AndroidViewModel(app) {
     private val store = Store(app.filesDir)
     private val _state = MutableStateFlow(store.load() ?: AppState())
@@ -44,21 +41,6 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         } else {
             Program.workout(ref.week, ref.day, s.settings, s.swaps)
         }
-
-    /** Первая невыполненная тренировка текущей недели, у которой дата не позже сегодня, иначе ближайшая будущая. */
-    fun nextUp(s: AppState, today: LocalDate = LocalDate.now()): NextUp? {
-        val done = s.doneKeys
-        val week = Program.weekOf(s.settings, today).coerceIn(1, Program.WEEKS)
-        for (w in week..Program.WEEKS) {
-            for (d in 0 until Program.DAYS) {
-                if (Program.key(w, d) in done) continue
-                val date = Program.dateOf(s.settings, w, d)
-                if (w == week && date.isBefore(today)) return NextUp(w, d, date, isToday = false, overdue = true)
-                if (!date.isBefore(today)) return NextUp(w, d, date, isToday = date == today, overdue = false)
-            }
-        }
-        return null
-    }
 
     fun saveSession(ref: WorkoutRef, w: Workout, logs: List<ExerciseLog>, startedAt: Long, durationSec: Int, kcal: Int, completed: Boolean) {
         if (logs.isEmpty()) return

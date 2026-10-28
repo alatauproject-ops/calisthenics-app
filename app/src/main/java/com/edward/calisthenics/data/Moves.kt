@@ -81,8 +81,11 @@ object Moves {
 
     fun load(context: Context) {
         if (moves.isNotEmpty()) return
+        runCatching { loadText(context.assets.open("moves.json").bufferedReader().use { it.readText() }) }
+    }
+
+    fun loadText(text: String) {
         moves = runCatching {
-            val text = context.assets.open("moves.json").bufferedReader().use { it.readText() }
             Json { ignoreUnknownKeys = true }.decodeFromString(MoveFile.serializer(), text).moves
         }.getOrDefault(emptyMap())
     }

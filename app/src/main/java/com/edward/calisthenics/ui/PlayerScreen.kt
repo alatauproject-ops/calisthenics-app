@@ -113,6 +113,7 @@ fun PlayerScreen(
     var confirmExit by remember { mutableStateOf(false) }
     var showTech by remember { mutableStateOf(false) }
     var finished by remember { mutableStateOf(false) }
+    var started by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -159,6 +160,7 @@ fun PlayerScreen(
             finish(true)
             return
         }
+        started = true
         index = i
         count = 0
         runAccum = 0
@@ -233,7 +235,7 @@ fun PlayerScreen(
     // Таймеры: подготовка, работа на время и отдых.
     LaunchedEffect(now) {
         val s = step ?: return@LaunchedEffect
-        if (finished || paused) return@LaunchedEffect
+        if (!started || finished || paused) return@LaunchedEffect
         when (s) {
             is Step.Rest -> {
                 val left = ((restEnd - now + 999) / 1000).toInt()

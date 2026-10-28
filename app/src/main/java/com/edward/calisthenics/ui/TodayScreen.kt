@@ -37,7 +37,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.edward.calisthenics.AppViewModel
 import com.edward.calisthenics.WorkoutRef
 import com.edward.calisthenics.data.AppState
 import com.edward.calisthenics.data.Nutrition
@@ -48,19 +47,20 @@ import java.time.temporal.ChronoUnit
 @Composable
 fun TodayScreen(
     state: AppState,
-    vm: AppViewModel,
     onOpen: (WorkoutRef) -> Unit,
     onStart: (WorkoutRef) -> Unit,
     onSettings: () -> Unit,
     onLogWeight: () -> Unit,
+    onToggleHabit: (String) -> Unit,
+    onStartThisWeek: () -> Unit,
+    today: LocalDate = LocalDate.now(),
 ) {
-    val today = LocalDate.now()
     val s = state.settings
     val start = LocalDate.ofEpochDay(s.startEpochDay)
     val rawWeek = Program.weekOf(s, today)
     val week = rawWeek.coerceIn(1, Program.WEEKS)
     val phase = Program.phase(week)
-    val next = vm.nextUp(state, today)
+    val next = Program.nextUp(state, today)
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
@@ -87,7 +87,7 @@ fun TodayScreen(
             Card(color = Surface1) {
                 Text("Старт программы: ${start.longTitle().lowercase()}", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 Text("Осталось дней: $days. Пока можно посмотреть упражнения и попробовать первую тренировку.", color = Muted)
-                TextButton(onClick = { vm.updateSettings { it.copy(startEpochDay = AppViewModel.thisMonday(today).toEpochDay()) } }) {
+                TextButton(onClick = onStartThisWeek) {
                     Text("Начать уже с этой недели")
                 }
             }
@@ -138,7 +138,7 @@ fun TodayScreen(
 
         WeightCard(state, onLogWeight)
 
-        HabitsCard(state, vm, today, phase.steps)
+        HabitsCard(state, today, phase.steps, onToggleHabit)
 
         val tip = Nutrition.tips[(today.toEpochDay() % Nutrition.tips.size).toInt()]
         Card(color = Surface1) {
@@ -234,7 +234,7 @@ fun WeightCard(state: AppState, onLogWeight: () -> Unit) {
 }
 
 @Composable
-private fun HabitsCard(state: AppState, vm: AppViewModel, today: LocalDate, steps: Int) {
+private fun HabitsCard(state: AppState, today: LocalDate, steps: Int, onToggle: (String) -> Unit) {
     val checked = state.habits[today.toEpochDay()].orEmpty()
     val water = com.edward.calisthenics.data.Nutrition.plan(state.profile, state.currentWeight).waterL
     Card(color = Surface1) {
@@ -253,7 +253,7 @@ private fun HabitsCard(state: AppState, vm: AppViewModel, today: LocalDate, step
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(14.dp))
-                    .clickable { vm.toggleHabit(id, today) }
+                    .clickable { onToggle(id) }
                     .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
