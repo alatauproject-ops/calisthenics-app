@@ -100,6 +100,7 @@ fun WorkoutPreviewScreen(
                     block.items.forEach { item ->
                         ExerciseRow(
                             item = item,
+                            rounds = block.rounds,
                             swapped = item.exercise.id != item.originalId,
                             canSwap = workout.kind != Kind.SINGLE && swapOptions(item, state).size > 1,
                             onClick = { onExercise(item.exercise.id) },
@@ -203,7 +204,7 @@ private fun HeroStat(value: String, label: String) {
 }
 
 @Composable
-private fun ExerciseRow(item: Item, swapped: Boolean, canSwap: Boolean, onClick: () -> Unit, onSwap: () -> Unit) {
+private fun ExerciseRow(item: Item, rounds: Int, swapped: Boolean, canSwap: Boolean, onClick: () -> Unit, onSwap: () -> Unit) {
     val ex = item.exercise
     Row(
         Modifier
@@ -219,6 +220,12 @@ private fun ExerciseRow(item: Item, swapped: Boolean, canSwap: Boolean, onClick:
             Text(ex.name, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
             Text(itemText(item) + (ex.repNote?.let { " · $it" } ?: ""), color = AccentSoft, fontSize = 14.sp)
             if (swapped) Text("замена", style = Caption)
+        }
+        if (!ex.fixedVolume) {
+            val unit = if (ex.measure == com.edward.calisthenics.data.Measure.TIME) "с" else ""
+            Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).padding(horizontal = 8.dp, vertical = 4.dp)) {
+                Text("${rounds}×${item.value}$unit", color = Color(0xFF111111), fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+            }
         }
         if (canSwap) {
             IconButton(onClick = onSwap) { Icon(Icons.Filled.SwapVert, "Заменить", tint = Muted) }

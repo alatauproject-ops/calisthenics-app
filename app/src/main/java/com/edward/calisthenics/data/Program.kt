@@ -138,6 +138,7 @@ object Program {
         listOf(
             fixed("hamstring_stretch", 40),
             fixed("quad_stretch", 40),
+            fixed("down_dog", 30),
             fixed("child_pose", 40),
             fixed("cobra", 30),
         ),
@@ -177,7 +178,7 @@ object Program {
                     Block("Ходьба", 1, listOf(m("brisk_walk", 25, 5)), 0, 0),
                     Block(
                         "Кор на коврике", 2,
-                        listOf(r("dead_bug", 8, 2), t("superman", 15, 5), t("side_plank", 20, 5), r("crunch", 10, 2)),
+                        listOf(r("dead_bug", 8, 2), t("superman", 15, 5), t("side_plank", 20, 5), r("crunch", 10, 2), t("knee_elbow", 30, 5)),
                         restItem = 15, restRound = 60,
                     ),
                     cooldown(),
@@ -253,7 +254,7 @@ object Program {
                 listOf(
                     Block(
                         "Кор", 3,
-                        listOf(t("hollow_hold", 20, 5), r("dead_bug", 10, 2), r("leg_raises", 10, 1), t("side_plank", 20, 5), r("superman_pull", 12, 1)),
+                        listOf(t("hollow_hold", 20, 5), r("dead_bug", 10, 2), r("leg_raises", 10, 1), t("side_plank", 20, 5), r("superman_pull", 12, 1), r("seated_knee_tuck", 12, 2)),
                         restItem = 15, restRound = 60,
                     ),
                     Block("Прогулка", 1, listOf(m("brisk_walk", 30, 5)), 0, 0),
@@ -308,7 +309,7 @@ object Program {
                 listOf(
                     Block(
                         "Ноги и кор", 3,
-                        listOf(r("squat", 20, 2), r("reverse_lunge", 20, 2), r("glute_bridge", 20, 2), r("calf_raise", 20, 2), t("side_plank", 30, 5), r("hanging_knee_raise", 10, 1)),
+                        listOf(r("squat", 20, 2), r("reverse_lunge", 20, 2), r("glute_bridge", 20, 2), r("calf_raise", 20, 2), t("side_plank", 30, 5), t("bear_crawl", 20, 5), r("hanging_knee_raise", 10, 1)),
                         restItem = 15, restRound = 60,
                     ),
                     Block("Прогулка", 1, listOf(m("brisk_walk", 40, 5)), 0, 0),

@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.edward.calisthenics.data.Category
 import com.edward.calisthenics.data.Equip
 import com.edward.calisthenics.data.Exercises
+import com.edward.calisthenics.data.Moves
 import com.edward.calisthenics.data.Measure
 
 @Composable
@@ -113,6 +114,15 @@ fun ExerciseDetailScreen(id: String, onBack: () -> Unit, onTry: () -> Unit, onOp
             }
             Text(ex.name, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
             Text("Работают: ${ex.muscles}", color = Muted)
+            if ((Moves[ex.anim]?.frames?.size ?: 0) > 1) {
+                Card(color = Surface1) {
+                    Text("КАК ДВИГАТЬСЯ", style = Caption)
+                    Box(Modifier.fillMaxWidth().height(170.dp)) {
+                        MoveFigure(ex.anim, Modifier.fillMaxSize(), animate = false, guide = true, color = categoryColor(ex.category))
+                    }
+                    Text("Полупрозрачный силуэт — начало, жёлтая стрелка — куда двигаться, красным — мышцы, которые работают.", style = Caption)
+                }
+            }
             if (ex.equip != Equip.NONE) Text("Нужно: ${ex.equip.title.lowercase()}", color = AccentSoft)
 
             Card(color = Surface1) {
