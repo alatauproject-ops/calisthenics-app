@@ -5,7 +5,7 @@ import java.io.File
 
 /** Хранит всё состояние приложения в одном JSON-файле на телефоне. */
 class Store(dir: File) {
-    private val file = File(dir, "state.json")
+    private val file = File(dir, "state-v2.json")
     private val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
@@ -17,7 +17,7 @@ class Store(dir: File) {
 
     @Synchronized
     fun save(state: AppState) {
-        val tmp = File(file.parentFile, "state.json.tmp")
+        val tmp = File(file.parentFile, "state-v2.json.tmp")
         tmp.writeText(json.encodeToString(AppState.serializer(), state))
         if (!tmp.renameTo(file)) {
             file.delete()
