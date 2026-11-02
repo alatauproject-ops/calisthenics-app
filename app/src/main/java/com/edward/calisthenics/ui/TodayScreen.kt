@@ -84,6 +84,8 @@ fun TodayScreen(
             IconButton(onClick = onSettings) { Icon(Icons.Filled.Settings, "Настройки", tint = Muted) }
         }
 
+        if (rawWeek in 1..Program.WEEKS) ChallengeCard(state, today)
+
         if (rawWeek < 1) {
             val days = ChronoUnit.DAYS.between(today, start)
             Card(color = Surface1) {
@@ -328,6 +330,61 @@ private fun DailyCard(state: AppState, week: Int, today: LocalDate, onOpen: (Wor
                     onClick = { onStart(ref) },
                     modifier = Modifier.size(48.dp).clip(CircleShape).background(kindColor(w.kind)),
                 ) { Icon(Icons.Filled.PlayArrow, "Начать", tint = Color.White) }
+            }
+        }
+    }
+}
+
+/** «День N из 84» и полоска из 84 клеток: закрашен день, когда сделана тренировка или статика. */
+@Composable
+private fun ChallengeCard(state: AppState, today: LocalDate) {
+    val s = state.settings
+    val day = Program.dayOf(s, today).coerceIn(1, Program.TOTAL_DAYS)
+    val activeDays = state.sessions.filter { it.completed }.mapTo(HashSet()) { it.epochDay }
+    val left = (s.startEpochDay + Program.TOTAL_DAYS - 1 - today.toEpochDay()).coerceAtLeast(0)
+    Card(brush = HeroGradient, padding = 18.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
+                androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                    val sw = 11.dp.toPx()
+                    val inset = sw / 2
+                    val arcSize = androidx.compose.ui.geometry.Size(size.width - sw, size.height - sw)
+                    val tl = androidx.compose.ui.geometry.Offset(inset, inset)
+                    drawArc(Color.White.copy(alpha = 0.25f), 0f, 360f, false, tl, arcSize, style = androidx.compose.ui.graphics.drawscope.Stroke(sw))
+                    drawArc(
+                        Color.White, -90f, 360f * day / Program.TOTAL_DAYS, false, tl, arcSize,
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(sw, cap = StrokeCap.Round),
+                    )
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("$day", color = Color.White, fontSize = 34.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("из ${Program.TOTAL_DAYS}", color = Color.White, fontSize = 13.sp)
+                }
+            }
+            Column(Modifier.padding(start = 14.dp).weight(1f)) {
+                Text("12-НЕДЕЛЬНЫЙ ЧЕЛЛЕНДЖ", color = Color.White.copy(alpha = 0.9f), fontSize = 12.sp)
+                Text("День $day", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
+                Text(
+                    if (left > 0) "До финиша $left дн. Неделя ${Program.weekOf(s, today)}: «${Program.milestone(Program.weekOf(s, today)).first}»" else "Финиш!",
+                    color = Color.White.copy(alpha = 0.92f), fontSize = 14.sp,
+                )
+            }
+        }
+        Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            for (row in 0 until 4) {
+                Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    for (col in 0 until 21) {
+                        val i = row * 21 + col
+                        val epoch = s.startEpochDay + i
+                        val c = when {
+                            epoch in activeDays -> Color.White
+                            epoch == today.toEpochDay() -> Color.White.copy(alpha = 0.55f)
+                            epoch < today.toEpochDay() -> Color.Black.copy(alpha = 0.18f)
+                            else -> Color.White.copy(alpha = 0.2f)
+                        }
+                        Box(Modifier.weight(1f).height(11.dp).clip(RoundedCornerShape(3.dp)).background(c))
+                    }
+                }
             }
         }
     }

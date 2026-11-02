@@ -34,6 +34,7 @@ import com.edward.calisthenics.ui.NutritionScreen
 import com.edward.calisthenics.ui.OnboardingScreen
 import com.edward.calisthenics.ui.PlayerResult
 import com.edward.calisthenics.ui.PlayerScreen
+import com.edward.calisthenics.ui.SkyMode
 import com.edward.calisthenics.ui.ProgramScreen
 import com.edward.calisthenics.ui.ProgressScreen
 import com.edward.calisthenics.ui.TodayScreen
@@ -136,17 +137,22 @@ class ScreensTest {
 
     @Test
     fun playerReps() = shot("player_reps") {
-        PlayerScreen(Program.single(Exercises.get("pushup")), 100.0, Feedback(paparazzi.context), {}, {})
+        PlayerScreen(Program.single(Exercises.get("pushup")), 100.0, Feedback(paparazzi.context), {}, {}, sky = SkyMode.DAWN)
     }
 
     @Test
     fun playerTime() = shot("player_time") {
-        PlayerScreen(Program.single(Exercises.get("plank")), 100.0, Feedback(paparazzi.context), {}, {})
+        PlayerScreen(Program.single(Exercises.get("side_plank")), 100.0, Feedback(paparazzi.context), {}, {}, sky = SkyMode.SUNSET)
     }
 
     @Test
     fun finish() = shot("finish") {
         FinishScreen("Всё тело A", PlayerResult(emptyList(), 0, 1520, 265, true, 19, 20, 154), 5, {}, {})
+    }
+
+    @Test
+    fun weekDone() = shot("week_done") {
+        FinishScreen("Пляж: интервальная ходьба", PlayerResult(emptyList(), 0, 1520, 265, true, 19, 20, 154), 4, {}, {}, weekDone = 1)
     }
 }
 

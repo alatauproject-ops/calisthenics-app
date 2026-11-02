@@ -86,7 +86,7 @@ private sealed class Screen {
     data class Preview(val ref: WorkoutRef) : Screen()
     data class Exercise(val id: String) : Screen()
     data class Player(val ref: WorkoutRef) : Screen()
-    data class Finish(val title: String, val result: PlayerResult) : Screen()
+    data class Finish(val title: String, val result: PlayerResult, val weekDone: Int? = null) : Screen()
     data object Settings : Screen()
 }
 
@@ -219,11 +219,14 @@ private fun App(vm: AppViewModel) {
                     weightKg = state.currentWeight,
                     feedback = feedback,
                     onFinish = { r ->
+                        fun weekComplete() = ref.isProgram && (0 until Program.DAYS).all { Program.key(ref.week, it) in vm.state.value.doneKeys }
+                        val before = weekComplete()
                         vm.saveSession(ref, workout, r.logs, r.startedAt, r.durationSec, r.kcal, r.completed)
+                        val weekDone = if (!before && weekComplete()) ref.week else null
                         pop()
                         // Превью этой тренировки больше не нужно: сразу на итог.
                         if (stack.lastOrNull() is Screen.Preview) pop()
-                        push(Screen.Finish(workout.title, r))
+                        push(Screen.Finish(workout.title, r, weekDone))
                     },
                     onExit = { pop() },
                 )
@@ -237,6 +240,7 @@ private fun App(vm: AppViewModel) {
                     stack.clear()
                     tab = Tab.TODAY.ordinal
                 },
+                weekDone = top.weekDone,
             )
             Screen.Settings -> SettingsScreen(state, vm, onBack = { pop() })
         }

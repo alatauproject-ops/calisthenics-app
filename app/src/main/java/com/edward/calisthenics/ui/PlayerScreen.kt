@@ -86,6 +86,7 @@ fun PlayerScreen(
     feedback: Feedback,
     onFinish: (PlayerResult) -> Unit,
     onExit: () -> Unit,
+    sky: SkyMode = skyNow(),
 ) {
     val view = LocalView.current
     DisposableEffect(Unit) {
@@ -333,13 +334,18 @@ fun PlayerScreen(
                         .clip(RoundedCornerShape(28.dp))
                         .background(CardGradient),
                 ) {
-                    MoveFigure(ex.anim, Modifier.fillMaxSize().padding(12.dp))
+                    BeachBackground(Modifier.fillMaxSize(), sky)
+                    MoveFigure(
+                        ex.anim,
+                        Modifier.fillMaxWidth().fillMaxHeight(0.62f).align(Alignment.BottomCenter).padding(horizontal = 12.dp),
+                        floor = false,
+                    )
                     Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Pill(ex.category.title, categoryColor(ex.category))
-                        Pill("${step.index + 1} / ${works.size}", Muted)
+                        Pill(ex.category.title, Color.White)
+                        Pill("${step.index + 1} / ${works.size}", Color.White)
                     }
                     IconButton(onClick = { showTech = true }, modifier = Modifier.align(Alignment.TopEnd)) {
-                        Icon(Icons.Filled.Info, "Техника", tint = Muted)
+                        Icon(Icons.Filled.Info, "Техника", tint = Color.White)
                     }
                 }
                 Spacer(Modifier.height(10.dp))

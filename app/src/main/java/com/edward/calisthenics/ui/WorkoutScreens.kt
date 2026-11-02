@@ -1,5 +1,7 @@
 package com.edward.calisthenics.ui
 
+import androidx.compose.ui.text.drawText
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -221,7 +223,7 @@ private fun ExerciseRow(item: Item, rounds: Int, swapped: Boolean, canSwap: Bool
             Text(itemText(item) + (ex.repNote?.let { " · $it" } ?: ""), color = AccentSoft, fontSize = 14.sp)
             if (swapped) Text("замена", style = Caption)
         }
-        if (!ex.fixedVolume) {
+        if (!ex.fixedVolume && rounds > 1) {
             val unit = if (ex.measure == com.edward.calisthenics.data.Measure.TIME) "с" else ""
             Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Color.White).padding(horizontal = 8.dp, vertical = 4.dp)) {
                 Text("${rounds}×${item.value}$unit", color = Color(0xFF111111), fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
@@ -240,6 +242,7 @@ fun FinishScreen(
     streak: Int,
     onLogWeight: () -> Unit,
     onDone: () -> Unit,
+    weekDone: Int? = null,
 ) {
     Column(
         Modifier.fillMaxSize().background(Bg).verticalScroll(rememberScrollState()).padding(20.dp),
@@ -247,17 +250,34 @@ fun FinishScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Spacer(Modifier.height(24.dp))
-        Box(
+        if (weekDone != null) {
+            val (name, text) = Program.milestone(weekDone)
+            Text("Неделя $weekDone пройдена!", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center)
+            WeekBadge(weekDone, Modifier.size(180.dp, 196.dp))
+            Text("«$name»", color = Color(0xFFFFC857), fontSize = 22.sp, fontWeight = FontWeight.ExtraBold)
+            Text(text, color = Muted, textAlign = TextAlign.Center)
+            if (weekDone < Program.WEEKS) {
+                val next = Program.milestone(weekDone + 1)
+                Card(color = Surface1) {
+                    Text("СЛЕДУЮЩИЙ ЭТАП", style = Caption)
+                    Text("Неделя ${weekDone + 1} · «${next.first}»", fontWeight = FontWeight.Bold)
+                    Text(next.second, color = Muted, fontSize = 14.sp)
+                }
+            }
+            Text(title, color = Muted, textAlign = TextAlign.Center)
+        } else Box(
             Modifier.size(120.dp).clip(CircleShape).background(if (result.completed) HeroGradient else SeaGradient),
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(64.dp))
         }
-        Text(
-            if (result.completed) "Тренировка выполнена!" else "Результат сохранён",
-            fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center,
-        )
-        Text(title, color = Muted, textAlign = TextAlign.Center)
+        if (weekDone == null) {
+            Text(
+                if (result.completed) "Тренировка выполнена!" else "Результат сохранён",
+                fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, textAlign = TextAlign.Center,
+            )
+            Text(title, color = Muted, textAlign = TextAlign.Center)
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Stat(minutesText(result.durationSec), "время", Modifier.weight(1f))
             Stat("${result.kcal}", "ккал (оценка)", Modifier.weight(1f), color = Accent)
@@ -280,5 +300,32 @@ fun FinishScreen(
             modifier = Modifier.fillMaxWidth().height(58.dp),
             shape = RoundedCornerShape(18.dp),
         ) { Text("Готово", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+    }
+}
+
+/** Значок пройденной недели: шестиугольник с лентами. */
+@Composable
+fun WeekBadge(week: Int, modifier: Modifier = Modifier) {
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    androidx.compose.foundation.Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        fun p(x: Float, y: Float) = androidx.compose.ui.geometry.Offset(x * w / 210f, y * h / 230f)
+        fun poly(vararg pts: androidx.compose.ui.geometry.Offset) = androidx.compose.ui.graphics.Path().apply {
+            moveTo(pts[0].x, pts[0].y)
+            for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
+            close()
+        }
+        drawPath(poly(p(60f, 150f), p(40f, 225f), p(75f, 205f), p(95f, 228f), p(105f, 160f)), Color(0xFFE8456B))
+        drawPath(poly(p(150f, 150f), p(170f, 225f), p(135f, 205f), p(115f, 228f), p(105f, 160f)), Color(0xFFC23A5A))
+        drawPath(
+            poly(p(105f, 8f), p(180f, 50f), p(180f, 135f), p(105f, 177f), p(30f, 135f), p(30f, 50f)),
+            androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFFFFC857), Color(0xFFFF7A3D)), start = p(30f, 8f), end = p(180f, 177f)),
+        )
+        drawPath(poly(p(105f, 26f), p(164f, 59f), p(164f, 126f), p(105f, 159f), p(46f, 126f), p(46f, 59f)), Color(0x592A1A10))
+        val t1 = measurer.measure("НЕДЕЛЯ", androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = (h / 13f).toSp(), fontWeight = FontWeight.ExtraBold))
+        drawText(t1, topLeft = androidx.compose.ui.geometry.Offset(p(105f, 0f).x - t1.size.width / 2f, p(0f, 62f).y))
+        val t2 = measurer.measure("$week", androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = (h / 4.4f).toSp(), fontWeight = FontWeight.Black))
+        drawText(t2, topLeft = androidx.compose.ui.geometry.Offset(p(105f, 0f).x - t2.size.width / 2f, p(0f, 82f).y))
     }
 }

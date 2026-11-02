@@ -103,7 +103,7 @@ fun ProgramScreen(state: AppState, onOpen: (WorkoutRef) -> Unit) {
                             else Text("$week", fontWeight = FontWeight.Bold, color = if (week == current) Color.White else TextMain)
                         }
                         Column(Modifier.padding(start = 12.dp).weight(1f)) {
-                            Text("Неделя $week" + if (week == current) " · сейчас" else "", fontWeight = FontWeight.SemiBold)
+                            Text("Неделя $week · ${Program.milestone(week).first}" + if (week == current) " · сейчас" else "", fontWeight = FontWeight.SemiBold)
                             val d0 = Program.dateOf(s, week, 0)
                             Text("с ${d0.minusDays((d0.dayOfWeek.value - 1).toLong()).shortTitle()} · выполнено $weekDone/${Program.DAYS}", style = Caption)
                         }
@@ -111,6 +111,7 @@ fun ProgramScreen(state: AppState, onOpen: (WorkoutRef) -> Unit) {
                     }
                     if (open) {
                         Column(Modifier.padding(start = 10.dp, end = 10.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(Program.milestone(week).second, color = AccentSoft, fontSize = 14.sp, modifier = Modifier.padding(horizontal = 4.dp))
                             for (day in 0 until Program.DAYS) {
                                 val w = Program.workout(week, day, s, state.swaps)
                                 val date = Program.dateOf(s, week, day)
