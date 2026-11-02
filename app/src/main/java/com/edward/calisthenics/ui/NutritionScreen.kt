@@ -24,6 +24,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.draw.clip
+import com.edward.calisthenics.data.ShopItem
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.foundation.horizontalScroll
 import com.edward.calisthenics.data.Food
 import com.edward.calisthenics.data.Program
 import com.edward.calisthenics.data.Recipe
@@ -62,13 +66,22 @@ fun NutritionScreen(
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)) {
             Text("Питание", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
             Spacer(Modifier.height(8.dp))
-            Segmented(listOf("Меню", "Покупки", "Рецепты", "Цели"), tab, onTab)
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Меню", "Покупки", "Продукты", "Рецепты", "Цели").forEachIndexed { i, label ->
+                    val on = i == tab
+                    Box(
+                        Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) Accent else Surface2).clickable { onTab(i) }
+                            .padding(horizontal = 16.dp, vertical = 10.dp),
+                    ) { Text(label, color = if (on) Color.White else Muted, fontWeight = FontWeight.SemiBold) }
+                }
+            }
         }
         Box(Modifier.weight(1f)) {
             when (tab) {
                 0 -> MenuTab(Program.weekOf(state.settings, LocalDate.now())) { recipe = it }
                 1 -> ShoppingTab(state.shopping, onToggleShop, onClearShop)
-                2 -> RecipesTab { recipe = it }
+                2 -> ProductsTab()
+                3 -> RecipesTab { recipe = it }
                 else -> GoalsTab(state)
             }
         }
@@ -149,6 +162,8 @@ private fun MenuTab(programWeek: Int, onRecipe: (String) -> Unit) {
 
 @Composable
 private fun ShoppingTab(checked: List<String>, onToggle: (String) -> Unit, onClear: () -> Unit) {
+    var show by remember { mutableStateOf<ShopItem?>(null) }
+    show?.let { SellerDialog(it) { show = null } }
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -157,6 +172,7 @@ private fun ShoppingTab(checked: List<String>, onToggle: (String) -> Unit, onCle
             Text("БЮДЖЕТ", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp)
             Text(Food.budget, color = Color.White)
         }
+        Text("Значок ⛶ справа открывает название крупно по-вьетнамски: покажите экран продавцу.", color = Muted, fontSize = 14.sp)
         Food.shopping.forEach { g ->
             SectionTitle(g.title) {
                 Text("${g.items.count { it.id in checked }}/${g.items.size}", style = Caption)
@@ -179,9 +195,12 @@ private fun ShoppingTab(checked: List<String>, onToggle: (String) -> Unit, onCle
                         }
                         Column(Modifier.padding(start = 12.dp).weight(1f)) {
                             Text(item.name, color = if (on) Muted else TextMain, fontWeight = FontWeight.SemiBold)
-                            Text("${item.local} · ${item.amount}", style = Caption)
+                            Text(item.local, color = AccentSoft, fontSize = 14.sp)
+                            Text("${item.amount} · ${item.price}", style = Caption)
                         }
-                        Text(item.price, color = AccentSoft, fontSize = 13.sp)
+                        IconButton(onClick = { show = item }) {
+                            Icon(Icons.Filled.Fullscreen, "Показать продавцу", tint = Muted)
+                        }
                     }
                 }
             }
@@ -218,6 +237,24 @@ private fun RecipesTab(onRecipe: (String) -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text("Всё готовится на одной сковороде или в кастрюле на газовой горелке, плюс чайник.", color = Muted, fontSize = 14.sp)
+        SectionTitle("Воскресная заготовка, 1 час")
+        Card(color = Surface1) {
+            Food.prepPlan.forEachIndexed { i, st ->
+                Row {
+                    Text("${i + 1}.", color = Accent, fontWeight = FontWeight.Bold, modifier = Modifier.width(22.dp))
+                    Text(st)
+                }
+            }
+        }
+        SectionTitle("Основы готовки")
+        Card(color = Surface1) {
+            Food.basics.forEach { (t, d) ->
+                Column(Modifier.padding(vertical = 2.dp)) {
+                    Text(t, fontWeight = FontWeight.Bold, color = AccentSoft)
+                    Text(d, fontSize = 14.sp)
+                }
+            }
+        }
         groups.forEach { (title, list) ->
             SectionTitle(title)
             list.forEach { r ->
@@ -366,5 +403,55 @@ private fun Macro(title: String, grams: Int, color: Color, modifier: Modifier) {
             }
         }
         Text(title, modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 6.dp), fontWeight = FontWeight.SemiBold)
+    }
+}
+
+/** Крупная карточка для продавца: что и сколько, по-вьетнамски. */
+@Composable
+private fun SellerDialog(item: ShopItem, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = null,
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(item.local, color = Color(0xFF111111), fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 36.sp)
+                if (item.ask.isNotEmpty()) Text(item.ask, color = Color(0xFFB4441A), fontSize = 24.sp, fontWeight = FontWeight.Bold, lineHeight = 30.sp)
+                Text("Tôi không ăn thịt heo. Không đường.", color = Color(0xFF444444), fontSize = 18.sp)
+                Text("${item.name} · ${item.amount}", color = Color(0xFF777777), fontSize = 14.sp)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Закрыть") } },
+    )
+}
+
+@Composable
+private fun ProductsTab() {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Text("Что брать и как выбирать. Калории и белок примерные, для сырого продукта.", color = Muted, fontSize = 14.sp)
+        Food.products.forEach { g ->
+            SectionTitle(g.title)
+            g.items.forEach { p ->
+                Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(Surface1).padding(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(p.ru, fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                            Text(p.vn, color = AccentSoft, fontSize = 14.sp)
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("${p.kcal} ккал", color = Accent, fontWeight = FontWeight.Bold)
+                            Text("${kg(p.protein)} г белка", color = Success, fontSize = 13.sp)
+                            Text("на ${p.per}", style = Caption)
+                        }
+                    }
+                    Text(p.choose, fontSize = 14.sp, modifier = Modifier.padding(top = 6.dp))
+                    Text("Хранение: ${p.keep} · ${p.price}", style = Caption, modifier = Modifier.padding(top = 4.dp))
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
     }
 }

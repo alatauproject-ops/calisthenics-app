@@ -117,7 +117,7 @@ class ScreensTest {
     fun progress() = shot("progress") { ProgressScreen(state, {}, {}, {}) }
 
     @Test
-    fun nutrition() = shot("nutrition") { NutritionScreen(state, 3, {}, {}, {}) }
+    fun nutrition() = shot("nutrition") { NutritionScreen(state, 4, {}, {}, {}) }
 
     @Test
     fun foodMenu() = shot("food_menu") { NutritionScreen(state, 0, {}, {}, {}) }
@@ -126,7 +126,10 @@ class ScreensTest {
     fun foodShop() = shot("food_shop") { NutritionScreen(state.copy(shopping = listOf("rice", "eggs")), 1, {}, {}, {}) }
 
     @Test
-    fun foodRecipes() = shot("food_recipes") { NutritionScreen(state, 2, {}, {}, {}) }
+    fun foodRecipes() = shot("food_recipes") { NutritionScreen(state, 3, {}, {}, {}) }
+
+    @Test
+    fun foodProducts() = shot("food_products") { NutritionScreen(state, 2, {}, {}, {}) }
 
     @Test
     fun onboarding() = shot("onboarding") { OnboardingScreen(AppState()) { _, _ -> } }
