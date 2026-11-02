@@ -71,6 +71,8 @@ data class AppState(
     val swaps: Map<String, String> = emptyMap(),
     /** Отмеченные пункты списка покупок. */
     val shopping: List<String> = emptyList(),
+    /** Фото прогресса: неделя программы -> день съёмки. Файлы лежат в filesDir/photos/week_N.jpg. */
+    val photos: Map<Int, Long> = emptyMap(),
 ) {
     val currentWeight: Double get() = weights.maxByOrNull { it.epochDay }?.kg ?: profile.startWeight
     val doneKeys: Set<String> get() = sessions.filter { it.completed }.mapTo(HashSet()) { it.key }

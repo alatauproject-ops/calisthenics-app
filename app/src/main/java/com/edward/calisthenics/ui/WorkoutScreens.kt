@@ -311,18 +311,18 @@ fun WeekBadge(week: Int, modifier: Modifier = Modifier) {
         val w = size.width
         val h = size.height
         fun p(x: Float, y: Float) = androidx.compose.ui.geometry.Offset(x * w / 210f, y * h / 230f)
-        fun poly(vararg pts: androidx.compose.ui.geometry.Offset) = androidx.compose.ui.graphics.Path().apply {
+        fun poly(pts: List<androidx.compose.ui.geometry.Offset>) = androidx.compose.ui.graphics.Path().apply {
             moveTo(pts[0].x, pts[0].y)
             for (i in 1 until pts.size) lineTo(pts[i].x, pts[i].y)
             close()
         }
-        drawPath(poly(p(60f, 150f), p(40f, 225f), p(75f, 205f), p(95f, 228f), p(105f, 160f)), Color(0xFFE8456B))
-        drawPath(poly(p(150f, 150f), p(170f, 225f), p(135f, 205f), p(115f, 228f), p(105f, 160f)), Color(0xFFC23A5A))
+        drawPath(poly(listOf(p(60f, 150f), p(40f, 225f), p(75f, 205f), p(95f, 228f), p(105f, 160f))), Color(0xFFE8456B))
+        drawPath(poly(listOf(p(150f, 150f), p(170f, 225f), p(135f, 205f), p(115f, 228f), p(105f, 160f))), Color(0xFFC23A5A))
         drawPath(
-            poly(p(105f, 8f), p(180f, 50f), p(180f, 135f), p(105f, 177f), p(30f, 135f), p(30f, 50f)),
+            poly(listOf(p(105f, 8f), p(180f, 50f), p(180f, 135f), p(105f, 177f), p(30f, 135f), p(30f, 50f))),
             androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFFFFC857), Color(0xFFFF7A3D)), start = p(30f, 8f), end = p(180f, 177f)),
         )
-        drawPath(poly(p(105f, 26f), p(164f, 59f), p(164f, 126f), p(105f, 159f), p(46f, 126f), p(46f, 59f)), Color(0x592A1A10))
+        drawPath(poly(listOf(p(105f, 26f), p(164f, 59f), p(164f, 126f), p(105f, 159f), p(46f, 126f), p(46f, 59f))), Color(0x592A1A10))
         val t1 = measurer.measure("НЕДЕЛЯ", androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = (h / 13f).toSp(), fontWeight = FontWeight.ExtraBold))
         drawText(t1, topLeft = androidx.compose.ui.geometry.Offset(p(105f, 0f).x - t1.size.width / 2f, p(0f, 62f).y))
         val t2 = measurer.measure("$week", androidx.compose.ui.text.TextStyle(color = Color.White, fontSize = (h / 4.4f).toSp(), fontWeight = FontWeight.Black))

@@ -62,6 +62,7 @@ fun ProgressScreen(
     onLogWeight: () -> Unit,
     onDeleteWeight: (Long) -> Unit,
     onDeleteSession: (Long) -> Unit,
+    onPhotos: () -> Unit = {},
 ) {
     var confirmDelete by remember { mutableStateOf<Long?>(null) }
     Column(
@@ -71,6 +72,19 @@ fun ProgressScreen(
         Text("Прогресс", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
         WeightCard(state, onLogWeight)
         WeightChart(state)
+        Card(color = Surface1, onClick = onPhotos) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("ФОТО ПРОГРЕССА", style = Caption)
+                    Text("Было / стало", fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (state.photos.isEmpty()) "Сделайте первое фото в зеркало" else "Фото: ${state.photos.size} из ${com.edward.calisthenics.data.Program.WEEKS} недель",
+                        color = Muted,
+                    )
+                }
+                Text("📷", fontSize = 30.sp)
+            }
+        }
 
         val sessions = state.sessions
         val totalMin = sessions.sumOf { it.durationSec } / 60

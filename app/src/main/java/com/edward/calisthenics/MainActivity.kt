@@ -52,6 +52,7 @@ import com.edward.calisthenics.ui.Muted
 import com.edward.calisthenics.ui.NutritionScreen
 import com.edward.calisthenics.ui.OnboardingScreen
 import com.edward.calisthenics.ui.PlayerResult
+import com.edward.calisthenics.ui.PhotosScreen
 import com.edward.calisthenics.ui.PlayerScreen
 import com.edward.calisthenics.ui.ProgramScreen
 import com.edward.calisthenics.ui.ProgressScreen
@@ -88,6 +89,7 @@ private sealed class Screen {
     data class Player(val ref: WorkoutRef) : Screen()
     data class Finish(val title: String, val result: PlayerResult, val weekDone: Int? = null) : Screen()
     data object Settings : Screen()
+    data object Photos : Screen()
 }
 
 /** Сколько тренировок программы выполнено подряд с начала, без пропусков. */
@@ -173,6 +175,7 @@ private fun App(vm: AppViewModel) {
                             onLogWeight = { weightDialog = true },
                             onDeleteWeight = { vm.deleteWeight(it) },
                             onDeleteSession = { vm.deleteSession(it) },
+                            onPhotos = { push(Screen.Photos) },
                         )
                         Tab.FOOD -> NutritionScreen(
                             state,
@@ -243,6 +246,7 @@ private fun App(vm: AppViewModel) {
                 weekDone = top.weekDone,
             )
             Screen.Settings -> SettingsScreen(state, vm, onBack = { pop() })
+            Screen.Photos -> PhotosScreen(state, onBack = { pop() }, onSaved = { vm.setPhoto(it) }, onDelete = { vm.deletePhoto(it) })
         }
         if (top != null && top !is Screen.Player && state.settings.onboarded) {
             BackHandler {

@@ -110,6 +110,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         s.copy(shopping = if (id in s.shopping) s.shopping - id else s.shopping + id)
     }
 
+    fun setPhoto(week: Int, day: LocalDate = LocalDate.now()) = mutate { s -> s.copy(photos = s.photos + (week to day.toEpochDay())) }
+
+    fun deletePhoto(week: Int) = mutate { s ->
+        java.io.File(getApplication<Application>().filesDir, "photos/week_$week.jpg").delete()
+        s.copy(photos = s.photos - week)
+    }
+
     fun clearShop() = mutate { s -> s.copy(shopping = emptyList()) }
 
     fun swap(originalId: String, newId: String?) = mutate { s ->
