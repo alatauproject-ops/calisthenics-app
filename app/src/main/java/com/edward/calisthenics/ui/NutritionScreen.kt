@@ -67,7 +67,7 @@ fun NutritionScreen(
             Text("Питание", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf("Меню", "Покупки", "Продукты", "Рецепты", "Цели").forEachIndexed { i, label ->
+                listOf("Меню", "Пароварка", "Покупки", "Продукты", "Рецепты", "Цели").forEachIndexed { i, label ->
                     val on = i == tab
                     Box(
                         Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) Accent else Surface2).clickable { onTab(i) }
@@ -79,9 +79,10 @@ fun NutritionScreen(
         Box(Modifier.weight(1f)) {
             when (tab) {
                 0 -> MenuTab(Program.weekOf(state.settings, LocalDate.now())) { recipe = it }
-                1 -> ShoppingTab(state.shopping, onToggleShop, onClearShop)
-                2 -> ProductsTab()
-                3 -> RecipesTab { recipe = it }
+                1 -> SteamerTab { recipe = it }
+                2 -> ShoppingTab(state.shopping, onToggleShop, onClearShop)
+                3 -> ProductsTab()
+                4 -> RecipesTab { recipe = it }
                 else -> GoalsTab(state)
             }
         }

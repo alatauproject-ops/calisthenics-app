@@ -14,8 +14,8 @@ android {
         applicationId = "com.edward.calisthenics"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "2.0"
+        versionCode = 31
+        versionName = "3.1"
     }
 
     signingConfigs {

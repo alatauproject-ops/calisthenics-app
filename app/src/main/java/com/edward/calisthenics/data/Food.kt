@@ -354,7 +354,7 @@ object Food {
         ),
     )
 
-    private val byId = recipes.associateBy { it.id }
+    private val byId by lazy { (recipes + Steamer.recipes).associateBy { it.id } }
     fun recipe(id: String): Recipe = byId.getValue(id)
 
     /** Две недели меню чередуются: нечётные недели программы — А, чётные — Б. Три ужина в кафе, остальное дома. */
