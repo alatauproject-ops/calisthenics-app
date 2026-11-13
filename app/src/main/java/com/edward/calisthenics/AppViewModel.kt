@@ -22,8 +22,16 @@ import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
 /** Ссылка на тренировку: из программы, ежедневная статика или отдельное упражнение. */
-data class WorkoutRef(val week: Int = 0, val day: Int = 0, val exerciseId: String? = null, val daily: Boolean = false) {
-    val isProgram: Boolean get() = exerciseId == null && !daily
+data class WorkoutRef(
+    val week: Int = 0,
+    val day: Int = 0,
+    val exerciseId: String? = null,
+    val daily: Boolean = false,
+    /** "taichi" или "hips": дополнительные ежедневные комплексы. */
+    val extra: String? = null,
+) {
+    val isProgram: Boolean get() = exerciseId == null && !daily && extra == null
+    val isDailyLike: Boolean get() = daily || extra != null
 }
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -40,6 +48,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun workout(s: AppState, ref: WorkoutRef): Workout = when {
         ref.exerciseId != null -> Program.single(com.edward.calisthenics.data.Exercises.get(ref.exerciseId))
         ref.daily -> Program.daily(Program.weekOf(s.settings, LocalDate.now()), s.settings, s.swaps)
+        ref.extra == "taichi" -> Program.taichi()
+        ref.extra == "hips" -> Program.hips()
         else -> Program.workout(ref.week, ref.day, s.settings, s.swaps)
     }
 
@@ -78,8 +88,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun markDailyDone(done: Boolean) = mutate { s ->
-        val w = Program.daily(Program.weekOf(s.settings, LocalDate.now()), s.settings, s.swaps)
+    fun markDailyDone(done: Boolean, ref: WorkoutRef = WorkoutRef(daily = true)) = mutate { s ->
+        val w = workout(s, ref)
         if (done) {
             s.copy(
                 sessions = s.sessions + Session(
@@ -135,6 +145,8 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     companion object {
         /** Понедельник, с которого стоит начать: сегодня, если понедельник, иначе следующий. */
+        fun today(): LocalDate = LocalDate.now()
+
         fun nextMonday(today: LocalDate = LocalDate.now()): LocalDate =
             today.with(TemporalAdjusters.nextOrSame(DayOfWeek.MONDAY))
 

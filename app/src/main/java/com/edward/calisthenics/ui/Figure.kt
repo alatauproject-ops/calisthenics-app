@@ -49,6 +49,9 @@ private val MUSCLES: Map<String, List<String>> = mapOf(
     "high_knees" to listOf("quads", "calves"), "burpee" to listOf("quads", "chest"), "burpee_low" to listOf("quads", "chest"),
     "down_dog" to listOf("hams", "calves", "shoulders"), "knee_elbow" to listOf("abs", "obliques"),
     "seated_knee_tuck" to listOf("abs"), "bear_crawl" to listOf("shoulders", "quads", "abs"),
+    "beast" to listOf("shoulders", "abs", "quads"), "dive" to listOf("chest", "shoulders", "triceps"),
+    "kickthrough" to listOf("abs", "obliques", "shoulders"), "hand_foot_tap" to listOf("abs", "obliques"),
+    "psoas_stretch" to listOf("quads"), "ninety_ninety" to listOf("glutes"), "taichi_rooster" to listOf("glutes", "quads"),
 )
 
 /**

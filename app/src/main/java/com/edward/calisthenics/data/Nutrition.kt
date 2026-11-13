@@ -37,6 +37,7 @@ object Nutrition {
         "protein" to "Белок в каждом приёме пищи",
         "nosugar" to "Без сладких напитков и пива",
         "sleep" to "Сон 7+ часов",
+        "kegel" to "Кегель днём и вечером (по 1 подходу)",
     )
 
     val choose = listOf(

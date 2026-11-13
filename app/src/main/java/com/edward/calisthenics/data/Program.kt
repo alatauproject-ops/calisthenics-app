@@ -97,9 +97,18 @@ object Program {
 
     fun weekOf(s: Settings, day: LocalDate): Int = ((day.toEpochDay() - s.startEpochDay) / 7).toInt() + 1
 
+    /**
+     * Смещения дней тренировок от начала недели программы (0..6). Неделя программы
+     * начинается в день старта, а не обязательно в понедельник: старт можно поставить на любой день.
+     */
+    fun offsets(s: Settings): List<Int> {
+        val startDow = LocalDate.ofEpochDay(s.startEpochDay).dayOfWeek.value
+        return s.trainingDays.map { (it - startDow + 7) % 7 }.sorted()
+    }
+
     fun dateOf(s: Settings, week: Int, day: Int): LocalDate {
-        val dow = s.trainingDays.sorted().getOrElse(day) { day + 1 }
-        return LocalDate.ofEpochDay(s.startEpochDay + (week - 1) * 7L + (dow - 1))
+        val off = offsets(s).getOrElse(day) { day }
+        return LocalDate.ofEpochDay(s.startEpochDay + (week - 1) * 7L + off)
     }
 
     fun key(week: Int, day: Int) = "w${week}d$day"
@@ -168,6 +177,26 @@ object Program {
         restItem = 5, restRound = 0,
     )
 
+    /** Уровень флоу-финишера по неделе: 1–4. */
+    fun flowLevel(week: Int): Int = when (week) {
+        in 1..4 -> 1
+        in 5..8 -> 2
+        in 9..10 -> 3
+        else -> 4
+    }
+
+    /** Финишер в стиле animal flow по вторникам и субботам. Объём не зависит от уровня сложности. */
+    private fun Builder.flow(week: Int): Block = when (flowLevel(week)) {
+        1 -> Block("Финишер: флоу, ур. 1", 4, listOf(fixed("beast", 30)), restItem = 0, restRound = 30)
+        2 -> Block("Финишер: флоу, ур. 2", 4, listOf(fixed("hand_foot_tap", 20), fixed("dive", 20)), restItem = 0, restRound = 20)
+        3 -> Block("Финишер: флоу, ур. 3", 4, listOf(fixed("kickthrough_slow", 40)), restItem = 0, restRound = 20)
+        else -> Block(
+            "Финишер: флоу, ур. 4", 3,
+            listOf(fixed("beast", 15), fixed("kickthrough", 30), fixed("dive", 15), fixed("deep_squat", 15)),
+            restItem = 0, restRound = 30,
+        )
+    }
+
     fun workout(week: Int, day: Int, s: Settings, swaps: Map<String, String>): Workout {
         val w = week.coerceIn(1, WEEKS)
         val b = Builder(s, swaps, (w - 1) % 4)
@@ -204,6 +233,7 @@ object Program {
                         listOf(r("dead_bug", 8, 2), t("superman", 15, 5), t("side_plank", 20, 5), r("crunch", 10, 2), t("knee_elbow", 30, 5)),
                         restItem = 15, restRound = 60,
                     ),
+                    flow(w),
                     cooldown(),
                 ), w, day,
             )
@@ -227,6 +257,7 @@ object Program {
                     Block("Разогрев", 1, listOf(fixed("walk", 300)), 0, 0),
                     Block("Интервалы", 5 + (w - 1) % 4, listOf(fixed("brisk_walk", 120), fixed("jog", 30)), 0, 0),
                     Block("Ноги на песке", 2, listOf(r("calf_raise", 15, 2), r("glute_bridge", 15, 2)), restItem = 15, restRound = 45),
+                    flow(w),
                     cooldown(),
                 ), w, day,
             )
@@ -255,6 +286,7 @@ object Program {
                     Block("Разогрев", 1, listOf(fixed("brisk_walk", 300)), 0, 0),
                     Block("Интервалы", 6, listOf(b.fixed("jog", 60 + 15 * ((w - 1) % 4)), fixed("brisk_walk", 90)), 0, 0),
                     Block("Заминка", 1, listOf(fixed("walk", 300)), 0, 0),
+                    flow(w),
                     cooldown(),
                 ), w, day,
             )
@@ -281,6 +313,7 @@ object Program {
                         restItem = 15, restRound = 60,
                     ),
                     Block("Прогулка", 1, listOf(m("brisk_walk", 30, 5)), 0, 0),
+                    flow(w),
                     cooldown(),
                 ), w, day,
             )
@@ -310,6 +343,7 @@ object Program {
                     Block("Разогрев", 1, listOf(fixed("brisk_walk", 300), fixed("jog", 300)), 0, 0),
                     Block("Ускорения", 8 + k, listOf(fixed("sprint", 20), fixed("walk", 70)), 0, 0),
                     Block("Заминка", 1, listOf(fixed("jog", 180), fixed("walk", 180)), 0, 0),
+                    flow(w),
                     cooldown(),
                 ), w, day,
             )
@@ -336,6 +370,7 @@ object Program {
                         restItem = 15, restRound = 60,
                     ),
                     Block("Прогулка", 1, listOf(m("brisk_walk", 40, 5)), 0, 0),
+                    flow(w),
                     cooldown(),
                 ), w, day,
             )
@@ -367,8 +402,67 @@ object Program {
                     ),
                     restItem = 10, restRound = 45,
                 ),
+                kegel(week),
             ),
         )
+    }
+
+    /** Кегель утром: медленные удержания + быстрые сжатия. Поза и время растут по фазам. */
+    private fun Builder.kegel(week: Int): Block {
+        val (id, reps) = when (week.coerceIn(1, WEEKS)) {
+            in 1..4 -> "kegel_lying" to 10
+            in 5..8 -> "kegel_seated" to 12
+            else -> "kegel_standing" to 15
+        }
+        return Block("Кегель", 1, listOf(item(id, reps), item("kegel_fast", reps)), restItem = 15, restRound = 0)
+    }
+
+    const val TAICHI_PREFIX = "taichi:"
+    const val HIPS_PREFIX = "hips:"
+
+    /** Тай-чи, около 5 минут: утром, на заминку или в день отдыха. */
+    fun taichi(day: LocalDate = LocalDate.now()): Workout {
+        fun f(id: String, sec: Int) = Item(Exercises.get(id), sec)
+        return Workout(
+            "$TAICHI_PREFIX${day.toEpochDay()}", "Тай-чи, 5 минут", Kind.CORE,
+            "Медленно и плавно, дыхание животом. Утром для пробуждения, вечером для расслабления или в день отдыха. Перед силовой это только мягкая разминка.",
+            listOf(
+                Block(
+                    "Тай-чи", 1,
+                    listOf(
+                        f("taichi_commence", 45), f("taichi_clouds", 60), f("taichi_horse", 60),
+                        f("taichi_brush", 60), f("taichi_rooster", 40), f("taichi_commence", 30),
+                    ),
+                    restItem = 3, restRound = 0,
+                ),
+            ),
+        )
+    }
+
+    /** Мобильность таза, около 10 минут: в дни без тренировки. */
+    fun hips(day: LocalDate = LocalDate.now()): Workout {
+        fun f(id: String, sec: Int) = Item(Exercises.get(id), sec)
+        return Workout(
+            "$HIPS_PREFIX${day.toEpochDay()}", "Мобильность таза", Kind.CORE,
+            "В дни без тренировки. Помогает тазовому дну, пояснице и тазобедренным суставам. Тянуть мягко, без боли.",
+            listOf(
+                Block(
+                    "Мобильность", 1,
+                    listOf(
+                        f("butterfly", 60), f("deep_squat", 45), f("ninety_ninety", 90),
+                        f("psoas_stretch", 80), f("happy_baby", 60), f("legs_up_wall", 120),
+                    ),
+                    restItem = 10, restRound = 0,
+                ),
+            ),
+        )
+    }
+
+    /** Отдельный день в программе: сегодня тренировка по расписанию? */
+    fun isTrainingDay(s: Settings, day: LocalDate): Boolean {
+        val w = weekOf(s, day)
+        if (w !in 1..WEEKS) return day.dayOfWeek.value in s.trainingDays
+        return (0 until DAYS).any { dateOf(s, w, it) == day }
     }
 
     fun single(ex: Exercise): Workout {

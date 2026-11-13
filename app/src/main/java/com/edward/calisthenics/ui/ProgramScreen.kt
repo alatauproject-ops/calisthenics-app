@@ -104,8 +104,8 @@ fun ProgramScreen(state: AppState, onOpen: (WorkoutRef) -> Unit) {
                         }
                         Column(Modifier.padding(start = 12.dp).weight(1f)) {
                             Text("Неделя $week · ${Program.milestone(week).first}" + if (week == current) " · сейчас" else "", fontWeight = FontWeight.SemiBold)
-                            val d0 = Program.dateOf(s, week, 0)
-                            Text("с ${d0.minusDays((d0.dayOfWeek.value - 1).toLong()).shortTitle()} · выполнено $weekDone/${Program.DAYS}", style = Caption)
+                            val d0 = java.time.LocalDate.ofEpochDay(s.startEpochDay + (week - 1) * 7L)
+                            Text("с ${d0.shortTitle()} · выполнено $weekDone/${Program.DAYS}", style = Caption)
                         }
                         Icon(if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, null, tint = Muted)
                     }

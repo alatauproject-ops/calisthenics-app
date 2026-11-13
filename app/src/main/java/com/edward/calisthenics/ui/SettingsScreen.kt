@@ -151,6 +151,11 @@ fun StartEditor(startEpochDay: Long, onChange: (Long) -> Unit) {
             FilledTonalButton(onClick = { onChange(AppViewModel.thisMonday().toEpochDay()) }) { Text("Эта неделя") }
             FilledTonalButton(onClick = { onChange(startEpochDay + 7) }) { Text("+1 нед.") }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilledTonalButton(onClick = { onChange(startEpochDay - 1) }) { Text("−1 день") }
+            FilledTonalButton(onClick = { onChange(AppViewModel.today().toEpochDay()) }) { Text("Сегодня") }
+            FilledTonalButton(onClick = { onChange(startEpochDay + 1) }) { Text("+1 день") }
+        }
     }
 }
 

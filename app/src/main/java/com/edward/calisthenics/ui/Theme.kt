@@ -55,6 +55,8 @@ fun categoryColor(c: Category): Color = when (c) {
     Category.CORE -> Color(0xFFB18CFF)
     Category.CARDIO -> Sea
     Category.STRETCH -> Success
+    Category.PELVIC -> Color(0xFF7FDBCA)
+    Category.FLOW -> Color(0xFFFF9EC7)
 }
 
 private val colors = darkColorScheme(

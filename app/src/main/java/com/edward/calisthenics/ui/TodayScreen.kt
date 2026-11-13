@@ -92,8 +92,21 @@ fun TodayScreen(
                 Text("Старт программы: ${start.longTitle().lowercase()}", fontWeight = FontWeight.Bold, fontSize = 17.sp)
                 Text("Осталось дней: $days. Пока можно посмотреть упражнения и попробовать первую тренировку.", color = Muted)
                 TextButton(onClick = onStartThisWeek) {
-                    Text("Начать уже с этой недели")
+                    Text("Начать с сегодняшнего дня")
                 }
+            }
+        }
+
+        val programDone = state.doneKeys.count { it.startsWith("w") }
+        if (rawWeek in 1..Program.WEEKS && programDone == 0 && Program.dayOf(s, today) > 1) {
+            Card(color = Surface1) {
+                Text("Начинаете только сейчас?", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                Text(
+                    "Старт стоит на ${start.shortTitle()}, и первые тренировки уже числятся пропущенными. " +
+                        "Можно перенести старт на сегодня: неделя 1 начнётся заново, дни тренировок останутся теми же.",
+                    color = Muted,
+                )
+                Button(onClick = onStartThisWeek, shape = RoundedCornerShape(14.dp)) { Text("Начать программу с сегодня") }
             }
         }
 
@@ -140,6 +153,11 @@ fun TodayScreen(
 
         DailyCard(state, week, today, onOpen, onStart)
 
+        ExtraCard(state, WorkoutRef(extra = "taichi"), Program.taichi(today), "taichi_clouds", "Утром, на заминку или в день отдыха", onOpen, onStart)
+        if (!Program.isTrainingDay(s, today)) {
+            ExtraCard(state, WorkoutRef(extra = "hips"), Program.hips(today), "butterfly", "День без тренировки: таз и поясница", onOpen, onStart)
+        }
+
         WeekStrip(state, week, today, onOpen)
 
         FoodTodayCard(rawWeek, today, onFood)
@@ -162,13 +180,13 @@ private fun WeekStrip(state: AppState, week: Int, today: LocalDate, onOpen: (Wor
     val s = state.settings
     val done = state.doneKeys
     val weekStart = LocalDate.ofEpochDay(s.startEpochDay + (week - 1) * 7L)
-    val days = s.trainingDays.sorted()
+    val offs = Program.offsets(s)
     Card(color = Surface1) {
         Text("НЕДЕЛЯ $week", style = Caption)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             for (i in 0..6) {
                 val date = weekStart.plusDays(i.toLong())
-                val dayIdx = days.indexOf(i + 1).takeIf { it in 0 until Program.DAYS }
+                val dayIdx = offs.indexOf(i).takeIf { it in 0 until Program.DAYS }
                 val isDone = dayIdx != null && Program.key(week, dayIdx) in done
                 val isToday = date == today
                 val kind = dayIdx?.let { Program.workout(week, it, s, state.swaps).kind }
@@ -179,7 +197,7 @@ private fun WeekStrip(state: AppState, week: Int, today: LocalDate, onOpen: (Wor
                         .clickable(enabled = dayIdx != null) { dayIdx?.let { onOpen(WorkoutRef(week, it)) } }
                         .padding(4.dp),
                 ) {
-                    Text(WeekdayShort[i], fontSize = 12.sp, color = if (isToday) Accent else Muted)
+                    Text(WeekdayShort[date.dayOfWeek.value - 1], fontSize = 12.sp, color = if (isToday) Accent else Muted)
                     Spacer(Modifier.height(4.dp))
                     Box(
                         Modifier
@@ -317,7 +335,7 @@ private fun DailyCard(state: AppState, week: Int, today: LocalDate, onOpen: (Wor
                 Text("Каждый день", style = Caption)
                 Text(w.title, fontSize = 19.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    if (done) "Сегодня сделано ✓" else "≈ ${minutesText(Program.durationSec(w))} · планки и удержания",
+                    if (done) "Сегодня сделано ✓" else "≈ ${minutesText(Program.durationSec(w))} · планки, удержания и Кегель",
                     color = if (done) Success else Muted,
                 )
             }
@@ -329,6 +347,46 @@ private fun DailyCard(state: AppState, week: Int, today: LocalDate, onOpen: (Wor
                 IconButton(
                     onClick = { onStart(ref) },
                     modifier = Modifier.size(48.dp).clip(CircleShape).background(kindColor(w.kind)),
+                ) { Icon(Icons.Filled.PlayArrow, "Начать", tint = Color.White) }
+            }
+        }
+    }
+}
+
+/** Карточка дополнительного ежедневного комплекса: тай-чи или мобильность таза. */
+@Composable
+private fun ExtraCard(
+    state: AppState,
+    ref: WorkoutRef,
+    w: com.edward.calisthenics.data.Workout,
+    anim: String,
+    caption: String,
+    onOpen: (WorkoutRef) -> Unit,
+    onStart: (WorkoutRef) -> Unit,
+) {
+    val done = w.key in state.doneKeys
+    val color = Color(0xFFFF9EC7)
+    Card(color = Surface1, onClick = { onOpen(ref) }) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(64.dp).clip(RoundedCornerShape(16.dp)).background(color.copy(alpha = 0.16f))) {
+                MoveFigure(anim, Modifier.fillMaxSize().padding(4.dp), animate = false, color = color)
+            }
+            Column(Modifier.weight(1f)) {
+                Text(caption, style = Caption)
+                Text(w.title, fontSize = 19.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    if (done) "Сегодня сделано ✓" else "≈ ${minutesText(Program.durationSec(w))}",
+                    color = if (done) Success else Muted,
+                )
+            }
+            if (done) {
+                Box(Modifier.size(48.dp).clip(CircleShape).background(Success.copy(alpha = 0.18f)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Filled.Check, "Сделано", tint = Success)
+                }
+            } else {
+                IconButton(
+                    onClick = { onStart(ref) },
+                    modifier = Modifier.size(48.dp).clip(CircleShape).background(color),
                 ) { Icon(Icons.Filled.PlayArrow, "Начать", tint = Color.White) }
             }
         }

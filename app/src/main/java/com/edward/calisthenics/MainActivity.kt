@@ -162,7 +162,7 @@ private fun App(vm: AppViewModel) {
                             onSettings = { push(Screen.Settings) },
                             onLogWeight = { weightDialog = true },
                             onToggleHabit = { vm.toggleHabit(it) },
-                            onStartThisWeek = { vm.updateSettings { it.copy(startEpochDay = AppViewModel.thisMonday().toEpochDay()) } },
+                            onStartThisWeek = { vm.updateSettings { it.copy(startEpochDay = AppViewModel.today().toEpochDay()) } },
                             onFood = {
                                 foodTab = 0
                                 tab = Tab.FOOD.ordinal
@@ -203,7 +203,7 @@ private fun App(vm: AppViewModel) {
                     onSwap = { o, n -> vm.swap(o, n) },
                     onToggleDone = when {
                         isProgram -> ({ done: Boolean -> vm.markDone(ref.week, ref.day, done) })
-                        ref.daily -> ({ done: Boolean -> vm.markDailyDone(done) })
+                        ref.isDailyLike -> ({ done: Boolean -> vm.markDailyDone(done, ref) })
                         else -> null
                     },
                 )
