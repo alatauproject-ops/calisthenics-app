@@ -386,21 +386,21 @@ object Program {
     fun daily(week: Int, s: Settings, swaps: Map<String, String>, day: LocalDate = LocalDate.now()): Workout = with(Builder(s, swaps, week.coerceIn(1, WEEKS) - 1)) {
         Workout(
             dailyKey(day), "Утренняя статика", Kind.CORE,
-            "Каждый день, лучше утром. Два круга удержаний: планки, лодочка, мостик. Дышите ровно, не задерживайте дыхание.",
+            "Каждый день, лучше утром. Два круга удержаний: планки, лодочка, мостик. Не получается додержать — опустите колени на пол, это нормально. Дышите ровно, не задерживайте дыхание.",
             listOf(
                 Block(
                     "Удержания", 2,
                     listOf(
-                        t("plank", 30, 2),
-                        t("side_plank_l", 20, 2),
-                        t("side_plank_r", 20, 2),
-                        t("hollow_hold", 20, 2),
-                        t("high_plank", 30, 2),
-                        t("superman", 25, 2),
-                        t("bridge_hold", 30, 2),
-                        t("squat_hold", 30, 2),
+                        t("plank", 20, 2),
+                        t("side_plank_l", 15, 1),
+                        t("side_plank_r", 15, 1),
+                        t("hollow_hold", 15, 1),
+                        t("high_plank", 20, 2),
+                        t("superman", 15, 2),
+                        t("bridge_hold", 20, 2),
+                        t("squat_hold", 20, 2),
                     ),
-                    restItem = 10, restRound = 45,
+                    restItem = 15, restRound = 60,
                 ),
                 kegel(week),
             ),
